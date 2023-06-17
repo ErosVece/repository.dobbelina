@@ -25,10 +25,10 @@ site = AdultSite('bongacams', '[COLOR hotpink]bongacams.com[/COLOR]', 'https://b
 
 @site.register(default_mode=True)
 def Main():
-    female = True if utils.addon.getSetting("chatfemale") == "true" else False
-    male = True if utils.addon.getSetting("chatmale") == "true" else False
-    couple = True if utils.addon.getSetting("chatcouple") == "true" else False
-    trans = True if utils.addon.getSetting("chattrans") == "true" else False
+    female = utils.addon.getSetting("chatfemale") == "true"
+    male = utils.addon.getSetting("chatmale") == "true"
+    couple = utils.addon.getSetting("chatcouple") == "true"
+    trans = utils.addon.getSetting("chattrans") == "true"
     site.add_dir('[COLOR red]Refresh bongacams.com images[/COLOR]', '', 'clean_database', '', Folder=False)
 
     bu = "http://tools.bongacams.com/promo.php?c=226355&type=api&api_type=json&categories[]="
@@ -59,38 +59,46 @@ def List(url):
         username = model['username']
         name = model['display_name']
         age = model['display_age']
-        name += ' [COLOR hotpink][{}][/COLOR]'.format(age)
+        name += f' [COLOR hotpink][{age}][/COLOR]'
         if model['hd_cam']:
             name += ' [COLOR gold]HD[/COLOR]'
         subject = ''
         if model.get('hometown'):
-            subject += u'Location: {}'.format(model.get('hometown'))
+            subject += f"Location: {model.get('hometown')}"
         if model.get('homecountry'):
-            subject += u', {}\n'.format(model.get('homecountry')) if subject else u'Location: {}\n'.format(model.get('homecountry'))
+            subject += (
+                f", {model.get('homecountry')}\n"
+                if subject
+                else f"Location: {model.get('homecountry')}\n"
+            )
         if model['ethnicity']:
-            subject += u'\n- {}\n'.format(model['ethnicity'])
+            subject += f"\n- {model['ethnicity']}\n"
         if model['primary_language']:
-            subject += u'- Speaks {}\n'.format(model['primary_language'])
+            subject += f"- Speaks {model['primary_language']}\n"
         if model['secondary_language']:
-            subject = subject[:-1] + u', {}\n'.format(model['secondary_language'])
+            subject = f"{subject[:-1]}, {model['secondary_language']}\n"
         if model['eye_color']:
-            subject += u'- {} Eyed\n'.format(model['eye_color'])
+            subject += f"- {model['eye_color']} Eyed\n"
         if model['hair_color']:
-            subject = subject[:-1] + u' {}\n'.format(model['hair_color'])
+            subject = f"{subject[:-1]} {model['hair_color']}\n"
         if model['height']:
-            subject += u'- {} tall\n'.format(model['height'])
+            subject += f"- {model['height']} tall\n"
         if model['weight']:
-            subject += u'- {} weight\n'.format(model['weight'])
+            subject += f"- {model['weight']} weight\n"
         if model['bust_penis_size']:
-            subject += u'- {} Boobs\n'.format(model['bust_penis_size']) if 'Female' in model['gender'] else u'- {} Cock\n'.format(model['bust_penis_size'])
+            subject += (
+                f"- {model['bust_penis_size']} Boobs\n"
+                if 'Female' in model['gender']
+                else f"- {model['bust_penis_size']} Cock\n"
+            )
         if model['pubic_hair']:
-            subject = subject[:-1] + u' and {} Pubes\n'.format(model['pubic_hair'])
+            subject = f"{subject[:-1]} and {model['pubic_hair']} Pubes\n"
         if model['vibratoy']:
             subject += u'- Lovense Toy\n\n'
         if model['turns_on']:
-            subject += u'- Likes: {}\n'.format(model['turns_on'])
+            subject += f"- Likes: {model['turns_on']}\n"
         if model['turns_off']:
-            subject += u'- Dislikes: {}\n\n'.format(model['turns_off'])
+            subject += f"- Dislikes: {model['turns_off']}\n\n"
         if model.get('tags'):
             subject += u', '.join(model.get('tags'))
         site.add_download_link(name, username, 'Playvid', img, subject.encode('utf-8') if utils.PY2 else subject, noDownload=True)
@@ -104,9 +112,9 @@ def clean_database(showdialog=True):
         with conn:
             list = conn.execute("SELECT id, cachedurl FROM texture WHERE url LIKE '%%%s%%';" % "bongacams.com")
             for row in list:
-                conn.execute("DELETE FROM sizes WHERE idtexture LIKE '%s';" % row[0])
+                conn.execute(f"DELETE FROM sizes WHERE idtexture LIKE '{row[0]}';")
                 try:
-                    os.remove(utils.TRANSLATEPATH("special://thumbnails/" + row[1]))
+                    os.remove(utils.TRANSLATEPATH(f"special://thumbnails/{row[1]}"))
                 except:
                     pass
             conn.execute("DELETE FROM texture WHERE url LIKE '%%%s%%';" % "bongacams.com")
@@ -155,9 +163,9 @@ def Playvid(url, name):
         vp.progress.close()
         return
     elif amf.startswith("//mobile"):
-        videourl = 'https:' + amf + '/hls/stream_' + url + '.m3u8'
+        videourl = f'https:{amf}/hls/stream_{url}.m3u8'
     else:
-        videourl = 'https:' + amf + '/hls/stream_' + url + '/playlist.m3u8'
+        videourl = f'https:{amf}/hls/stream_{url}/playlist.m3u8'
 
     videourl += '|User-Agent={0}'.format(utils.USER_AGENT)
     vp.progress.update(75, "[CR]Found Stream[CR]")
@@ -168,7 +176,7 @@ def Playvid(url, name):
 def List2(url):
     site.add_download_link('[COLOR red][B]Refresh[/B][/COLOR]', url, 'utils.refresh', '', '', noDownload=True)
     if utils.addon.getSetting("online_only") == "true":
-        url = url + '?online_only=1'
+        url = f'{url}?online_only=1'
         site.add_download_link('[COLOR red][B]Show all models[/B][/COLOR]', url, 'online', '', '', noDownload=True)
     else:
         site.add_download_link('[COLOR red][B]Show only models online[/B][/COLOR]', url, 'online', '', '', noDownload=True)
@@ -183,9 +191,9 @@ def List2(url):
     match = re.compile('class="top_thumb".+?href="([^"]+)".+?src="([^"]+)".+?class="mn_lc">(.+?)</span>', re.I | re.M | re.S).findall(match[0])
     for url, img, name in match:
         if 'profile' in url:
-            name = '[COLOR hotpink][Offline][/COLOR] ' + name
+            name = f'[COLOR hotpink][Offline][/COLOR] {name}'
             url = "  "
-        site.add_download_link(name, url[1:], 'Playvid', 'https:' + img, '')
+        site.add_download_link(name, url[1:], 'Playvid', f'https:{img}', '')
     utils.eod()
 
 
@@ -193,7 +201,7 @@ def List2(url):
 def List3(url):
     site.add_download_link('[COLOR red][B]Refresh[/B][/COLOR]', url, 'utils.refresh', '', '', noDownload=True)
     if utils.addon.getSetting("online_only") == "true":
-        url = url + '?online_only=1'
+        url = f'{url}?online_only=1'
         site.add_download_link('[COLOR red][B]Show all models[/B][/COLOR]', url, 'online', '', '', noDownload=True)
     else:
         site.add_download_link('[COLOR red][B]Show only models online[/B][/COLOR]', url, 'online', '', '', noDownload=True)
@@ -206,9 +214,9 @@ def List3(url):
     match = re.compile('class="top_thumb".+?href="([^"]+)".+?src="([^"]+)".+?class="mn_lc">(.+?)</span>', re.I | re.M | re.S).findall(match[0])
     for url, img, name in match:
         if 'profile' in url:
-            name = '[COLOR hotpink][Offline][/COLOR] ' + name
+            name = f'[COLOR hotpink][Offline][/COLOR] {name}'
             url = "  "
-        site.add_download_link(name, url[1:], 'Playvid', 'https:' + img, '')
+        site.add_download_link(name, url[1:], 'Playvid', f'https:{img}', '')
     utils.eod()
 
 

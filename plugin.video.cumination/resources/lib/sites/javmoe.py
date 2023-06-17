@@ -35,8 +35,19 @@ enames = {'FS': 'FileStar',
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Genres[/COLOR]', site.url + 'genres/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Pornstars[/COLOR]', site.url + 'pornstars/', 'Letters', '', '')
+    site.add_dir(
+        '[COLOR hotpink]Genres[/COLOR]',
+        f'{site.url}genres/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Pornstars[/COLOR]',
+        f'{site.url}pornstars/',
+        'Letters',
+        '',
+        '',
+    )
     site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s={}&post_type=post', 'Search', site.img_search)
     List(site.url)
     utils.eod()
@@ -52,8 +63,10 @@ def List(url):
             return None
         divs = re.compile(r'<div\s*class="epshen">(.+?</h2>)', re.DOTALL | re.IGNORECASE).findall(listhtml)
         for div in divs:
-            match = re.compile(r'href="([^"]+).+?src="([^"]+).+?title">([^<]+)', re.DOTALL | re.IGNORECASE).search(div)
-            if match:
+            if match := re.compile(
+                r'href="([^"]+).+?src="([^"]+).+?title">([^<]+)',
+                re.DOTALL | re.IGNORECASE,
+            ).search(div):
                 videopage, img, name = match.groups()
                 name = utils.cleantext(name)
                 img = urllib_parse.quote(img, safe=':/')
@@ -73,7 +86,7 @@ def List(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl.format(title)
@@ -99,9 +112,11 @@ def Letters(url):
 
 @site.register()
 def Pornstars(url):
-    caturl = site.url + 'pornstars/'
+    caturl = f'{site.url}pornstars/'
     cathtml = utils.getHtml(caturl, '')
-    match = re.compile(r'<li><a\s*href="([^"]+)"\s*>({}[^<]+)'.format(url), re.DOTALL | re.IGNORECASE).findall(cathtml)
+    match = re.compile(
+        f'<li><a\s*href="([^"]+)"\s*>({url}[^<]+)', re.DOTALL | re.IGNORECASE
+    ).findall(cathtml)
     for catpage, name in match:
         site.add_dir(name, catpage.strip(), 'List')
     utils.eod()
@@ -131,7 +146,7 @@ def Playvid(url, name, download=None):
         videourl = videourl.split('data=')[-1]
         while '%' in videourl:
             videourl = urllib_parse.unquote(videourl)
-        videohtml = utils.getHtml('https:' + videourl, site.url)
+        videohtml = utils.getHtml(f'https:{videourl}', site.url)
         ptext = jsunpack.unpack(videohtml).replace('\\', '')
         ct = re.findall(r'"ct":"([^"]+)', ptext)[0]
         salt = codecs.decode(re.findall(r'"s":"([^"]+)', ptext)[0], 'hex')
@@ -152,7 +167,7 @@ def Playvid(url, name, download=None):
         vp.progress.update(75, "[CR]Processed embed page[CR]")
         if surl:
             if surl.startswith('//'):
-                surl = 'https:' + surl
+                surl = f'https:{surl}'
             attempt = 1
             while 'redirect' in surl:
                 surl = utils.getVideoLink(surl, headers={'Range': 'bytes=0-'})
@@ -162,14 +177,14 @@ def Playvid(url, name, download=None):
                     surl = "{0}&t={1}&ref={2}%26play_error_file%3Dyes&try={3}&res={4}".format(source, t, site.url, attempt, qual)
                 elif 'redirector.' in surl:
                     surl = ''
-            if surl:
-                vp.play_from_direct_link(surl)
+        if surl:
+            vp.play_from_direct_link(surl)
         vp.progress.close()
         utils.notify('Oh oh', 'No video found')
         return
     elif 'motonews' in videourl:
         if videourl.startswith('//'):
-            videourl = 'https:' + videourl
+            videourl = f'https:{videourl}'
         epage = utils.getHtml(videourl, url)
         s = re.findall(r'file":"(?P<url>[^"]+)","label":"(?P<label>[^"]+)', epage)
         vp.progress.update(75, "[CR]Processed embed page[CR]")
@@ -177,7 +192,7 @@ def Playvid(url, name, download=None):
             sources = {qual: source.replace('\\/', '/') for source, qual in s}
             surl = utils.prefquality(sources)
             if surl.startswith('//'):
-                surl = 'https:' + surl
+                surl = f'https:{surl}'
             vp.play_from_direct_link(surl + '|Referer={0}&verifypeer=false'.format(urllib_parse.urljoin(videourl, '/')))
         else:
             vp.progress.close()

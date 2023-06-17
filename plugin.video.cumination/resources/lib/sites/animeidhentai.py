@@ -47,12 +47,13 @@ def animeidhentai_list(url):
         if 'uncensored' in name.lower():
             name = name.replace('Uncensored', '') + " [COLOR hotpink][I]Uncensored[/I][/COLOR]"
         match = re.search(r'>(\d\d\d\d)<', hd)
-        year = " [COLOR blue](" + match.group(1) + ")[/COLOR]" if match else ''
+        year = f" [COLOR blue]({match[1]})[/COLOR]" if match else ''
         name += year
         site.add_download_link(utils.cleantext(name), video, 'animeidhentai_play', img, utils.cleantext(plot), quality=quality)
-    next_page = re.compile('rel="next" href="([^"]+)"', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if next_page:
-        site.add_dir('Next Page', next_page.group(1), 'animeidhentai_list', site.img_next)
+    if next_page := re.compile(
+        'rel="next" href="([^"]+)"', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        site.add_dir('Next Page', next_page[1], 'animeidhentai_list', site.img_next)
     utils.eod()
 
 
@@ -79,11 +80,12 @@ def animeidhentai_genres(url):
 @site.register()
 def Years(url):
     yearhtml = utils.getHtml(url, site.url)
-    match = re.compile(r'name="years"\s+id="year-\d+"\s+value="\d+"\s+data-name="(\d+)">', re.DOTALL | re.IGNORECASE).findall(yearhtml)
-    if match:
-        year = utils.selector('Select link', match, reverse=True)
-        if year:
-            animeidhentai_list(site.url + 'year/' + year + '/')
+    if match := re.compile(
+        r'name="years"\s+id="year-\d+"\s+value="\d+"\s+data-name="(\d+)">',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(yearhtml):
+        if year := utils.selector('Select link', match, reverse=True):
+            animeidhentai_list(f'{site.url}year/{year}/')
 
 
 @site.register()
@@ -92,16 +94,16 @@ def animeidhentai_play(url, name, download=None):
     vp.progress.update(25, "[CR]Loading video page[CR]")
     videopage = utils.getHtml(url, site.url)
 
-    match = re.compile(r'data-player>\s+<iframe.+?-src="([^"]+)', re.DOTALL | re.IGNORECASE).search(videopage)
-    if match:
-        videourl = match.group(1)
+    if match := re.compile(
+        r'data-player>\s+<iframe.+?-src="([^"]+)', re.DOTALL | re.IGNORECASE
+    ).search(videopage):
+        videourl = match[1]
         if 'nhplayer.com' in videourl:
             videopage = utils.getHtml(videourl, site.url)
-            match = re.compile(r'<li data-id="([^"]+)').search(videopage)
-            if match:
-                videourl = match.group(1)
+            if match := re.compile(r'<li data-id="([^"]+)').search(videopage):
+                videourl = match[1]
                 if videourl.startswith('/'):
-                    videourl = 'https://nhplayer.com' + videourl
+                    videourl = f'https://nhplayer.com{videourl}'
                     videohtml = utils.getHtml(videourl, site.url)
                     vp.direct_regex = r'file:\s*"([^"]+)"'
                     vp.play_from_html(videohtml)

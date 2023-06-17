@@ -12,8 +12,7 @@ import json
 
 def rpc_request(request):
     payload = xbmc.executeJSONRPC(json.dumps(request))
-    response = json.loads(payload)
-    return response
+    return json.loads(payload)
 
 
 def validate_rpc_response(response, request=None, required_attrib=None):
@@ -26,16 +25,15 @@ def validate_rpc_response(response, request=None, required_attrib=None):
     if 'error' in response:
         message = response['error']['message']
         code = response['error']['code']
-        if request:
-            error = 'JSONRPC: Requested |%s| received error |%s| and code: |%s|' % \
-                    (request, message, code)
-        else:
-            error = 'JSONRPC: Received error |%s| and code: |%s|' % (message, code)
+        error = (
+            f'JSONRPC: Requested |{request}| received error |{message}| and code: |{code}|'
+            if request
+            else f'JSONRPC: Received error |{message}| and code: |{code}|'
+        )
+    elif request:
+        error = f'JSONRPC: Requested |{request}| received error |{str(response)}|'
     else:
-        if request:
-            error = 'JSONRPC: Requested |%s| received error |%s|' % (request, str(response))
-        else:
-            error = 'JSONRPC: Received error |%s|' % str(response)
+        error = f'JSONRPC: Received error |{str(response)}|'
 
     xbmc.log(error, xbmc.LOGERROR)
     return False
@@ -66,9 +64,7 @@ def debug_show_log_info(value):
     }
 
     response = rpc_request(payload)
-    if not validate_rpc_response(response, payload):
-        return None
-    return response
+    return None if not validate_rpc_response(response, payload) else response
 
 
 def toggle_debug():
@@ -77,6 +73,6 @@ def toggle_debug():
         return False
 
     result = [x['value'] for x in settings['result']['settings'] if x['id'] == 'debug.showloginfo'][0]
-    togglevar = False if result else True
+    togglevar = not result
     debug_show_log_info(togglevar)
     return True

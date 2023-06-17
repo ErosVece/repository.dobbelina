@@ -26,7 +26,12 @@ site = AdultSite('aagmaal', '[COLOR hotpink]Aag Maal[/COLOR]', 'https://aagmaal.
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url, 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s=', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?s=',
+        'Search',
+        site.img_search,
+    )
     List(site.url)
     utils.eod()
 
@@ -41,10 +46,17 @@ def List(url):
         name = utils.cleantext(name)
         site.add_download_link(name, videopage, 'Playvid', img, name)
 
-    url = re.compile(r'''class="pagination.+?class="current.+?href=['"]?([^\s'"]+)''', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if url:
+    if url := re.compile(
+        r'''class="pagination.+?class="current.+?href=['"]?([^\s'"]+)''',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
         pgtxt = 'Currently in {0}'.format(re.findall(r'class="pages">([^<]+)', listhtml)[0])
-        site.add_dir('[COLOR hotpink]Next Page...[/COLOR] {0}'.format(pgtxt), url.group(1), 'List', site.img_next)
+        site.add_dir(
+            '[COLOR hotpink]Next Page...[/COLOR] {0}'.format(pgtxt),
+            url[1],
+            'List',
+            site.img_next,
+        )
     utils.eod()
 
 
@@ -57,10 +69,17 @@ def List2(url):
         name = utils.cleantext(name)
         site.add_download_link(name, iurl, 'Playvid', img, name)
 
-    purl = re.compile(r'''class="pagination.+?class="current.+?href="([^"]+)''', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if purl:
+    if purl := re.compile(
+        r'''class="pagination.+?class="current.+?href="([^"]+)''',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
         pgtxt = 'Currently in {0}'.format(re.findall(r'class="pages">([^<]+)', listhtml)[0])
-        site.add_dir('[COLOR hotpink]Next Page...[/COLOR] {0}'.format(pgtxt), purl.group(1), 'List2', site.img_next)
+        site.add_dir(
+            '[COLOR hotpink]Next Page...[/COLOR] {0}'.format(pgtxt),
+            purl[1],
+            'List2',
+            site.img_next,
+        )
     utils.eod()
 
 
@@ -71,14 +90,14 @@ def Playvid(url, name, download=None):
     videourl = ''
 
     videopage = utils.getHtml(url, site.url)
-    links = re.compile(r'''href="([^"]+)"\s*class="external.+?blank">.*?(?://|\.)([^/]+)''', re.DOTALL | re.IGNORECASE).findall(videopage)
-    if links:
+    if links := re.compile(
+        r'''href="([^"]+)"\s*class="external.+?blank">.*?(?://|\.)([^/]+)''',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(videopage):
         links = {host: link for link, host in links if vp.resolveurl.HostedMediaFile(link)}
         videourl = utils.selector('Select link', links)
-    else:
-        r = re.search(r'<iframe\s*loading="lazy"\s*src="([^"]+)', videopage)
-        if r:
-            videourl = r.group(1)
+    elif r := re.search(r'<iframe\s*loading="lazy"\s*src="([^"]+)', videopage):
+        videourl = r[1]
 
     if not videourl:
         utils.notify('Oh Oh', 'No Videos found')
@@ -102,7 +121,7 @@ def Categories(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title

@@ -29,22 +29,39 @@ def Main(url):
     sort_orders = {'Recent': '', 'Most viewed': 'viewed/', 'Top rated': 'rated/', 'Most favorited': 'favorited/', 'Recently watched': 'watched/', 'Longest': 'longest/'}
     order = utils.addon.getSetting('apsortorder') if utils.addon.getSetting('apsortorder') else ''
     ordername = list(sort_orders.keys())[list(sort_orders.values()).index(order)]
-    site.add_dir('[COLOR hotpink]Sort Order: [/COLOR] [COLOR orange]{}[/COLOR]'.format(ordername), site.url, 'Sortorder', site.img_cat)
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Lists[/COLOR]', site.url + 'playlists/', 'Lists', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/video/?s=', 'Search', site.img_search)
-    List(site.url + 'videos/')
+    site.add_dir(
+        f'[COLOR hotpink]Sort Order: [/COLOR] [COLOR orange]{ordername}[/COLOR]',
+        site.url,
+        'Sortorder',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Lists[/COLOR]',
+        f'{site.url}playlists/',
+        'Lists',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/video/?s=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}videos/')
     utils.eod()
 
 
 @site.register()
 def List(url):
     order = utils.addon.getSetting('apsortorder') if utils.addon.getSetting('apsortorder') else ''
-    if not '/' + order in url:
-        if '?' in url:
-            pageurl = url + '&o=' + order[:-1]
-        else:
-            pageurl = url + order
+    if f'/{order}' not in url:
+        pageurl = f'{url}&o={order[:-1]}' if '?' in url else url + order
     else:
         pageurl = url
 
@@ -65,16 +82,15 @@ def List(url):
         name = utils.cleantext(name)
         site.add_download_link(name, site.url[:-1] + videopage, 'Playvid', site.url[:-1] + img, name, duration=duration)
 
-    nextp = re.compile(r'href="([^"]+)" class="page-link" title="Go to next page!"', re.DOTALL | re.IGNORECASE).findall(listhtml)
-    if nextp:
+    if nextp := re.compile(
+        r'href="([^"]+)" class="page-link" title="Go to next page!"',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(listhtml):
         nextp = site.url[:-1] + nextp[0]
         np = re.findall(r'\d+', nextp)[-1]
         lp = re.compile(r'title="Go to last page!">(\d+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
-        if lp:
-            lp = '/' + lp[0]
-        else:
-            lp = ''
-        site.add_dir('Next Page ({}{})'.format(np, lp), nextp, 'List', site.img_next)
+        lp = f'/{lp[0]}' if lp else ''
+        site.add_dir(f'Next Page ({np}{lp})', nextp, 'List', site.img_next)
     utils.eod()
 
 
@@ -83,13 +99,15 @@ def Playvid(url, name, download=None):
     vp = utils.VideoPlayer(name, download)
     html = utils.getHtml(url)
     if 'source src="' not in html:
-        match = re.compile(r'id="player">\s*<iframe src="([^"]+)"', re.DOTALL | re.IGNORECASE).findall(html)
-        if match:
+        if match := re.compile(
+            r'id="player">\s*<iframe src="([^"]+)"', re.DOTALL | re.IGNORECASE
+        ).findall(html):
             iframe = match[0]
             html = utils.getHtml(iframe, site.url)
-    match = re.compile(r'source src="([^"]+)"', re.DOTALL | re.IGNORECASE).findall(html)
-    if match:
-        videourl = match[0] + '|Referer={}'.format(site.url)
+    if match := re.compile(
+        r'source src="([^"]+)"', re.DOTALL | re.IGNORECASE
+    ).findall(html):
+        videourl = f'{match[0]}|Referer={site.url}'
         vp.play_from_direct_link(videourl)
     else:
         utils.notify('Oh oh', 'No video found')
@@ -104,7 +122,7 @@ def Categories(url):
 
     match = re.compile(r'category-thumb".+?href="([^"]+)" title="([^"]+)".+?data-src="([^"]+)".+?class="fa fa-video-camera"></i>([^<]+)<', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, count in match:
-        name = utils.cleantext(name) + "[COLOR deeppink] " + count.strip() + "[/COLOR]"
+        name = f"{utils.cleantext(name)}[COLOR deeppink] {count.strip()}[/COLOR]"
         if int(count.strip()) > 0:
             site.add_dir(name, site.url[:-1] + catpage, 'List', site.url[:-1] + img)
     utils.eod()
@@ -119,14 +137,16 @@ def Lists(url):
 
     match = re.compile(r'class="playlist-thumb".+?href="([^"]+)" title="([^"]+)".+?data-src="([^"]+)".+?class="fa fa-video-camera"></i>([^<]+)<', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, count in match:
-        name = utils.cleantext(name) + "[COLOR deeppink] " + count.strip() + "[/COLOR]"
+        name = f"{utils.cleantext(name)}[COLOR deeppink] {count.strip()}[/COLOR]"
         if int(count.strip()) > 0:
             site.add_dir(name, site.url[:-1] + catpage, 'List', site.url[:-1] + img)
-    nextp = re.compile(r'href="([^"]+)" class="page-link" title="Go to next page!"', re.DOTALL | re.IGNORECASE).findall(cathtml)
-    if nextp:
+    if nextp := re.compile(
+        r'href="([^"]+)" class="page-link" title="Go to next page!"',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(cathtml):
         nextp = site.url[:-1] + nextp[0]
         np = re.findall(r'\d+', nextp)[-1]
-        site.add_dir('Next Page ({})'.format(np), nextp, 'Lists', site.img_next)
+        site.add_dir(f'Next Page ({np})', nextp, 'Lists', site.img_next)
 
     # match = re.compile(r'a href="(/videos/[^"]+)" title="([^"]+)">', re.DOTALL | re.IGNORECASE).findall(cathtml)
     # for page, name in match:
@@ -140,7 +160,7 @@ def Lists(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title
@@ -150,7 +170,6 @@ def Search(url, keyword=None):
 @site.register()
 def Sortorder(url):
     sort_orders = {'Recent': '', 'Most viewed': 'viewed/', 'Top rated': 'rated/', 'Most favorited': 'favorited/', 'Recently watched': 'watched/', 'Longest': 'longest/'}
-    order = utils.selector('Select category', sort_orders.keys())
-    if order:
+    if order := utils.selector('Select category', sort_orders.keys()):
         utils.addon.setSetting('apsortorder', sort_orders[order])
         xbmc.executebuiltin('Container.Refresh')

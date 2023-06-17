@@ -25,11 +25,28 @@ site = AdultSite('japteenx', '[COLOR hotpink]JapTeenX[/COLOR]', 'https://www.jap
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'tags', 'Cats', site.img_cat)
-    site.add_dir('[COLOR hotpink]Girls[/COLOR]', site.url + 'pornstars', 'Pornstars', site.img_cat)
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'tags', 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/videos?search_query=', 'Search', site.img_search)
-    List(site.url + 'videos?o=mr&type=public&page=1')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}tags',
+        'Cats',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Girls[/COLOR]',
+        f'{site.url}pornstars',
+        'Pornstars',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]', f'{site.url}tags', 'Tags', site.img_cat
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/videos?search_query=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}videos?o=mr&type=public&page=1')
     utils.eod()
 
 
@@ -47,9 +64,10 @@ def List(url):
 
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration, quality=hd)
 
-    np = re.compile('<li><a href="([^"]+)" class="prevnext', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        site.add_dir('Next Page...', np.group(1), 'List', site.img_next)
+    if np := re.compile(
+        '<li><a href="([^"]+)" class="prevnext', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        site.add_dir('Next Page...', np[1], 'List', site.img_next)
     utils.eod()
 
 
@@ -63,7 +81,7 @@ def Playvid(url, name, download=None):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title + '&type=public'
@@ -94,13 +112,14 @@ def Pornstars(url):
     listhtml = utils.getHtml(url)
     match = re.compile('class="model-sh" href="/([^"]+)">.*?src="([^"]+)".*?title-small">([^<]+)<.*?fa-film"></i>([^<]+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for catpage, img, name, videos in match:
-        name = '{} - [COLOR hotpink]{}[/COLOR]'.format(utils.cleantext(name), videos)
+        name = f'{utils.cleantext(name)} - [COLOR hotpink]{videos}[/COLOR]'
         videos = utils.cleantext(videos)
         site.add_dir(name, site.url + catpage, 'List', img)
 
-    np = re.compile('<li><a href="([^"]+)" class="prevnext', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        site.add_dir('Next Page...', np.group(1), 'Pornstars', site.img_next)
+    if np := re.compile(
+        '<li><a href="([^"]+)" class="prevnext', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        site.add_dir('Next Page...', np[1], 'Pornstars', site.img_next)
 
     utils.eod()
 
@@ -110,7 +129,7 @@ def Tags(url):
     listhtml = utils.getHtml(url, site.url, error=True)
     match = re.compile('/(tags/[^"]+)">([^<]+)</a><span>([^<]+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for tagpage, name, videos in match:
-        name = '{} - [COLOR hotpink]{}[/COLOR]'.format(utils.cleantext(name), videos)
+        name = f'{utils.cleantext(name)} - [COLOR hotpink]{videos}[/COLOR]'
         site.add_dir(name, site.url + tagpage + '?type=public&o=mr', 'List', '')
 
     utils.eod()

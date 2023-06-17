@@ -42,9 +42,10 @@ def List(url):
         name = utils.cleantext(name.strip())
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration, quality=hd)
 
-    npage = re.search(r'class="next.+?href="([^"]+)', listhtml, re.DOTALL | re.IGNORECASE)
-    if npage:
-        purl = site.url + npage.group(1)
+    if npage := re.search(
+        r'class="next.+?href="([^"]+)', listhtml, re.DOTALL | re.IGNORECASE
+    ):
+        purl = site.url + npage[1]
         site.add_dir('Next Page ({0})'.format(purl.split('/')[-2]), purl, 'List', site.img_next)
 
     utils.eod()
@@ -55,8 +56,9 @@ def Playvid(url, name, download=None):
     vp = utils.VideoPlayer(name, download)
     vp.progress.update(25, "[CR]Loading video page[CR]")
     html = utils.getHtml(url)
-    sources = re.findall(r"video(?:_alt)?_url:\s*'([^']+).+?text:\s*'([^']+)", html)
-    if sources:
+    if sources := re.findall(
+        r"video(?:_alt)?_url:\s*'([^']+).+?text:\s*'([^']+)", html
+    ):
         sources = {label: url for url, label in sources}
         surl = utils.prefquality(sources, sort_by=lambda x: int(''.join([y for y in x if y.isdigit()])), reverse=True)
         if surl.startswith('function/'):

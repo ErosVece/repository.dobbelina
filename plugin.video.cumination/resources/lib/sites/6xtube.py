@@ -28,9 +28,19 @@ site = AdultSite('6xtube', "[COLOR hotpink]6XTube[/COLOR]", 'http://www.6xtube.c
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'channels/', 'Categories', site.img_search)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
-    List(site.url + 'most-recent/')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}channels/',
+        'Categories',
+        site.img_search,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}most-recent/')
     utils.eod()
 
 
@@ -60,20 +70,19 @@ def List(url):
 @site.register()
 def GotoPage(list_mode, url, np, lp):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
-        url = url.replace('page{}.html'.format(np), 'page{}.html'.format(pg))
+    if pg := dialog.numeric(0, 'Enter Page number'):
+        url = url.replace(f'page{np}.html', f'page{pg}.html')
         if int(lp) > 0 and int(pg) > int(lp):
             utils.notify(msg='Out of range!')
             return
-        contexturl = (utils.addon_sys + "?mode=" + str(list_mode) + "&url=" + urllib_parse.quote_plus(url))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode={str(list_mode)}&url={urllib_parse.quote_plus(url)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
 def Related(url):
-    contexturl = (utils.addon_sys + "?mode=" + str('6xtube.List') + "&url=" + urllib_parse.quote_plus(url))
-    xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+    contexturl = f"{utils.addon_sys}?mode=6xtube.List&url={urllib_parse.quote_plus(url)}"
+    xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
@@ -101,8 +110,9 @@ def Playvid(url, name, download=None):
     vp.progress.update(25, "[CR]Loading video page[CR]")
 
     videohtml = utils.getHtml(url, site.url, ignoreCertificateErrors=True)
-    match = re.compile(r'iframe scrolling="no"\s*src="([^"]+)"', re.IGNORECASE | re.DOTALL).findall(videohtml)
-    if match:
+    if match := re.compile(
+        r'iframe scrolling="no"\s*src="([^"]+)"', re.IGNORECASE | re.DOTALL
+    ).findall(videohtml):
         embedlink = match[0]
         embedhtml = utils.getHtml(embedlink, url, ignoreCertificateErrors=True)
         vp.play_from_html(embedhtml)

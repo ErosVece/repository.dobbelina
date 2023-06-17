@@ -25,12 +25,37 @@ site = AdultSite('kissjav', '[COLOR hotpink]Kiss JAV[/COLOR]', 'https://kissjav.
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'videos/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Models[/COLOR]', site.url + 'models/', 'Models', site.img_cat)
-    site.add_dir('[COLOR hotpink]Playlists[/COLOR]', site.url + 'playlists/recent/', 'Playlists', site.img_cat)
-    site.add_dir('[COLOR hotpink]Movies[/COLOR]', site.url + 'videos/asian-porn-movies/', 'List', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/video/?s=', 'Search', site.img_search)
-    List(site.url + 'videos/')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}videos/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Models[/COLOR]',
+        f'{site.url}models/',
+        'Models',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Playlists[/COLOR]',
+        f'{site.url}playlists/recent/',
+        'Playlists',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Movies[/COLOR]',
+        f'{site.url}videos/asian-porn-movies/',
+        'List',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/video/?s=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}videos/')
     utils.eod()
 
 
@@ -45,9 +70,11 @@ def List(url):
         videopage = '{0}{1}/'.format(site.url, video_id)
         site.add_download_link(name, videopage, 'Playvid', site.url[:-1] + img, name, duration=duration, quality=quality)
 
-    nextp = re.compile(r'<a href="([^"]+)"\s*class="pagination-next">', re.DOTALL | re.IGNORECASE).search(html)
-    if nextp:
-        np = nextp.group(1)
+    if nextp := re.compile(
+        r'<a href="([^"]+)"\s*class="pagination-next">',
+        re.DOTALL | re.IGNORECASE,
+    ).search(html):
+        np = nextp[1]
         if np.startswith('/'):
             np = site.url[:-1] + np
         curr_pg = re.findall(r'class="pagination-link\s*is-current[^>]+>([^<]+)', html)[0]
@@ -74,9 +101,11 @@ def Models(url):
         name = utils.cleantext(name) + ' [COLOR hotpink]({0} videos)[/COLOR]'.format(count)
         site.add_dir(name, caturl, 'List', site.url[:-1] + img)
 
-    nextp = re.compile(r'<a href="([^"]+)"\s*class="pagination-next">', re.DOTALL | re.IGNORECASE).search(cathtml)
-    if nextp:
-        np = nextp.group(1)
+    if nextp := re.compile(
+        r'<a href="([^"]+)"\s*class="pagination-next">',
+        re.DOTALL | re.IGNORECASE,
+    ).search(cathtml):
+        np = nextp[1]
         if np.startswith('/'):
             np = site.url[:-1] + np
         curr_pg = re.findall(r'class="pagination-link\s*is-current[^>]+>([^<]+)', cathtml)[0]
@@ -95,9 +124,11 @@ def Playlists(url):
             caturl = site.url[:-1] + caturl
         site.add_dir(name, caturl, 'List', site.url[:-1] + img)
 
-    nextp = re.compile(r'<a href="([^"]+)"\s*class="pagination-next">', re.DOTALL | re.IGNORECASE).search(cathtml)
-    if nextp:
-        np = nextp.group(1)
+    if nextp := re.compile(
+        r'<a href="([^"]+)"\s*class="pagination-next">',
+        re.DOTALL | re.IGNORECASE,
+    ).search(cathtml):
+        np = nextp[1]
         if np.startswith('/'):
             np = site.url[:-1] + np
         curr_pg = re.findall(r'class="pagination-link\s*is-current[^>]+>([^<]+)', cathtml)[0]
@@ -121,11 +152,13 @@ def Playvid(url, name, download=None):
     vp.progress.update(25, "[CR]Loading video page[CR]")
     video_page = utils.getHtml(url, site.url)
 
-    sources = re.compile(r'<source.+?src="([^"]+).+?title="([^"]+)', re.DOTALL | re.IGNORECASE).findall(video_page)
-    if sources:
+    if sources := re.compile(
+        r'<source.+?src="([^"]+).+?title="([^"]+)', re.DOTALL | re.IGNORECASE
+    ).findall(video_page):
         sources = {qual: surl for surl, qual in sources}
-        source = utils.prefquality(sources, sort_by=lambda x: int(x[:-1]), reverse=True)
-        if source:
+        if source := utils.prefquality(
+            sources, sort_by=lambda x: int(x[:-1]), reverse=True
+        ):
             source = utils.getVideoLink(source)
             vp.play_from_direct_link(source)
         else:

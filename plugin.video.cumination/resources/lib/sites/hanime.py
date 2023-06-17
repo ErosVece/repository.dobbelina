@@ -67,9 +67,8 @@ def hanime_list(url='', search='', page=0):
             tag = url.split('|')
         else:
             tag.append(url)
-    mode = 'OR' if len(tag) == 1 else 'AND'
-
     siteurl = 'https://search.htv-services.com/'
+    mode = 'OR' if len(tag) == 1 else 'AND'
     data = {"search_text": search,
             "tags": tag,
             "tags_mode": mode,
@@ -91,7 +90,7 @@ def hanime_list(url='', search='', page=0):
     for video in videos:
         name = video['name']
         if video['is_censored'] is False:
-            name = name + " [COLOR hotpink][I]Uncensored[/I][/COLOR]"
+            name = f"{name} [COLOR hotpink][I]Uncensored[/I][/COLOR]"
         videoid = video['slug']
         img = video['cover_url'].replace('highwinds-cdn.com', 'droidbuzz.top')
         fanart = video['poster_url'].replace('highwinds-cdn.com', 'droidbuzz.top')
@@ -100,10 +99,11 @@ def hanime_list(url='', search='', page=0):
             plot = plot.encode('ascii', 'ignore')
         tags = ', '.join(sorted(video['tags']))
         plot = '[COLOR hotpink][I]Tags: {1}[/I][/COLOR]\n\n{0}'.format(plot, tags)
-        contexturl = (utils.addon_sys
-                      + "?mode=" + str('hanime.hanime_eps')
-                      + "&url=" + urllib_parse.quote_plus(videoid))
-        contextmenu = ('[COLOR deeppink]Check other episodes[/COLOR]', 'RunPlugin(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode=hanime.hanime_eps&url={urllib_parse.quote_plus(videoid)}"
+        contextmenu = (
+            '[COLOR deeppink]Check other episodes[/COLOR]',
+            f'RunPlugin({contexturl})',
+        )
         site.add_download_link(name, videoid, 'hanime_play_combined', img, plot, noDownload=True, contextm=contextmenu, fanart=fanart)
 
     if 'nbPages' in hits:
@@ -125,8 +125,9 @@ def hanime_search(url, keyword=None):
 
 @site.register()
 def hanime_filter():
-    selected_tags = utils.dialog.multiselect('Select (multiple) tags to filter on', tags)
-    if selected_tags:
+    if selected_tags := utils.dialog.multiselect(
+        'Select (multiple) tags to filter on', tags
+    ):
         stags = '|'.join([tags[x].lower() for x in selected_tags])
         hanime_list(stags, '', 0)
 
@@ -143,8 +144,7 @@ def get_videos(url, member=False):
         headers = hanime_headers
         video_api = "https://hanime.tv/rapi/v7/videos_manifests/{0}".format(url)
 
-    videojson = utils.getHtml(video_api, headers=headers)
-    if videojson:
+    if videojson := utils.getHtml(video_api, headers=headers):
         data = json.loads(videojson)
         if member:
             videos = {video['height']: video['url'] for video in data['transcodes'] if video['url']}
@@ -162,7 +162,7 @@ def hanime_play_combined(url, name, download=None):
     try:
         if htvlogged and hanime_login(action='refresh'):
             member_videos = get_videos(url, member=True)
-            videos.update(member_videos)
+            videos |= member_videos
         if not videos:
             free_videos = get_videos(url)
             videos.update(free_videos)
@@ -172,15 +172,20 @@ def hanime_play_combined(url, name, download=None):
 
     if videos:
         vp = utils.VideoPlayer(name, download=download)
-        videourl = utils.selector('Select quality', videos, setting_valid='qualityask', sort_by=lambda x: int(x), reverse=True)
-        if videourl:
-            videourl = videourl + '|User-Agent:' + ua
+        if videourl := utils.selector(
+            'Select quality',
+            videos,
+            setting_valid='qualityask',
+            sort_by=lambda x: int(x),
+            reverse=True,
+        ):
+            videourl = f'{videourl}|User-Agent:{ua}'
             vp.play_from_direct_link(videourl)
 
 
 @site.register()
 def hanime_eps(url):
-    url = 'https://hanime.tv/api/v8/video?id=' + url
+    url = f'https://hanime.tv/api/v8/video?id={url}'
     try:
         listhtml = utils.getHtml(url, headers=hanime_headers)
     except Exception as e:
@@ -192,12 +197,14 @@ def hanime_eps(url):
         for episode in episodes:
             name = episode['name']
             if episode['is_censored'] is False:
-                name = name + " [COLOR hotpink][I]Uncensored[/I][/COLOR]"
+                name = f"{name} [COLOR hotpink][I]Uncensored[/I][/COLOR]"
             eps[name] = episode['slug']
-        selected_episode = utils.selector('Choose episode', eps, show_on_one=True)
-        if not selected_episode:
+        if selected_episode := utils.selector(
+            'Choose episode', eps, show_on_one=True
+        ):
+            hanime_play(selected_episode, [x for x, y in eps.items() if y is selected_episode][0])
+        else:
             return
-        hanime_play(selected_episode, [x for x, y in eps.items() if y is selected_episode][0])
     except:
         utils.notify('Notify', 'No other episodes found')
 
@@ -220,11 +227,11 @@ def makeXheaders():
 @site.register()
 def hanime_login(action='login'):
     htvlogged = utils.addon.getSetting('htvlogged')
-    
+
     if not htvlogged or htvlogged == 'false':
         htvuser = utils.addon.getSetting('htvuser') if utils.addon.getSetting('htvuser') else ''
         htvpass = utils.addon.getSetting('htvpass') if utils.addon.getSetting('htvpass') else ''
-        
+
         if htvuser == '':
             htvuser = getinput(default=htvuser, heading='Input your Hanime.tv member email')
             htvpass = getinput(default=htvpass, heading='Input your Hanime.tv password', hidden=True)
@@ -234,8 +241,9 @@ def hanime_login(action='login'):
         data = json.dumps({'burger': htvuser, 'fries': htvpass})
         headers = makeXheaders()
         headers.update({"Content-Type": "application/json"})
-        response = utils._getHtml(apiurl+'/rapi/v4/sessions', data=data, headers=headers)
-        if response:
+        if response := utils._getHtml(
+            f'{apiurl}/rapi/v4/sessions', data=data, headers=headers
+        ):
             response_dict = json.loads(response)
             apidata = response_dict['env']['mobile_apps']
             build_numbers = ['_build_number', 'osts_build_number', 'severilous_build_number']
@@ -255,21 +263,21 @@ def hanime_login(action='login'):
         utils.addon.setSetting('session_token', response_dict['session_token'])
         utils.addon.setSetting('build_number', str(apidata))
         utils.addon.setSetting('htvlogged', 'true')
-        
+
         if action == 'login':
             utils.notify('Notify', 'Login successful')
             xbmc.executebuiltin('Container.Refresh')
     elif action != 'refresh':
-        clear = utils.selector('Clear stored user & password?', ['Yes', 'No'], reverse=True)
-        if clear:
+        if clear := utils.selector(
+            'Clear stored user & password?', ['Yes', 'No'], reverse=True
+        ):
             if clear == 'Yes':
                 utils.addon.setSetting('htvuser', '')
                 utils.addon.setSetting('htvpass', '')
             utils.addon.setSetting('session_token', '')
             utils.addon.setSetting('build_number', '')
             utils.addon.setSetting('htvlogged', 'false')
-            
-            contexturl = (utils.addon_sys
-                          + "?mode=" + str('hanime.hanime_main'))
-            xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+
+            contexturl = f"{utils.addon_sys}?mode=hanime.hanime_main"
+            xbmc.executebuiltin(f'Container.Update({contexturl})')
     return True

@@ -27,11 +27,33 @@ site = AdultSite('hqporner', '[COLOR hotpink]HQPorner[/COLOR]', 'https://hqporne
 
 @site.register(default_mode=True)
 def HQMAIN():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + '/porn-categories.php', 'HQCAT', site.img_cat)
-    site.add_dir('[COLOR hotpink]Studios[/COLOR]', site.url + '/porn-studios.php', 'HQCAT', '', '')
-    site.add_dir('[COLOR hotpink]Girls[/COLOR]', site.url + '/porn-actress.php', 'HQCAT', '', '')
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '/?q=', 'HQSEARCH', site.img_search)
-    HQLIST(site.url + '/hdporn/1')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}/porn-categories.php',
+        'HQCAT',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Studios[/COLOR]',
+        f'{site.url}/porn-studios.php',
+        'HQCAT',
+        '',
+        '',
+    )
+    site.add_dir(
+        '[COLOR hotpink]Girls[/COLOR]',
+        f'{site.url}/porn-actress.php',
+        'HQCAT',
+        '',
+        '',
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}/?q=',
+        'HQSEARCH',
+        site.img_search,
+    )
+    HQLIST(f'{site.url}/hdporn/1')
     utils.eod()
 
 
@@ -46,18 +68,16 @@ def HQLIST(url):
         name = utils.cleantext(name).title()
         videourl = urllib_parse.quote(site.url + url, safe=':/')
         if img.startswith('//'):
-            img = 'https:' + img
+            img = f'https:{img}'
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                          + "?mode=" + str('hqporner.Lookupinfo')
-                          + "&url=" + urllib_parse.quote_plus(videourl))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        contexturl = f"{utils.addon_sys}?mode=hqporner.Lookupinfo&url={urllib_parse.quote_plus(videourl)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, videourl, 'HQPLAY', img, name, duration=duration, contextm=contextmenu)
     try:
         nextp = re.compile('<a href="([^"]+)"[^>]+>Next', re.DOTALL | re.IGNORECASE).findall(link)
-        nextp = "https://www.hqporner.com" + nextp[0]
+        nextp = f"https://www.hqporner.com{nextp[0]}"
         site.add_dir('Next Page', nextp, 'HQLIST', site.img_next)
     except:
         pass
@@ -72,7 +92,7 @@ def HQCAT(url):
     for caturl, img, catname in tags:
         caturl = site.url + caturl
         if img.startswith('//'):
-            img = 'https:' + img
+            img = f'https:{img}'
         site.add_dir(catname.title(), caturl, 'HQLIST', img)
     utils.eod()
 
@@ -81,7 +101,7 @@ def HQCAT(url):
 def HQSEARCH(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'HQSEARCH')
+        site.search_dir(searchUrl, 'HQSEARCH')
     else:
         title = keyword.replace(' ', '%20')
         searchUrl = searchUrl + title
@@ -93,7 +113,7 @@ def HQPLAY(url, name, download=None):
     videopage = utils.getHtml(url, url)
     iframeurl = re.compile(r"nativeplayer\.php\?i=([^']+)", re.DOTALL | re.IGNORECASE).findall(videopage)[0]
     if iframeurl.startswith('//'):
-        iframeurl = 'https:' + iframeurl
+        iframeurl = f'https:{iframeurl}'
     if 'bemywife' in iframeurl:
         videourl = getBMW(iframeurl)
     elif 'mydaddy' in iframeurl:
@@ -119,7 +139,7 @@ def getBMW(url):
         videos = {label: url for url, label in videos}
         videourl = utils.prefquality(videos, sort_by=lambda x: int(''.join([y for y in x if y.isdigit()])), reverse=True)
         if videourl.startswith('//'):
-            videourl = 'https:' + videourl
+            videourl = f'https:{videourl}'
         return videourl
 
 
@@ -128,18 +148,20 @@ def getIP(url):
     videos = re.compile(r'file":\s*"([^"]+)"', re.DOTALL | re.IGNORECASE).findall(videopage)
     videourl = videos[-1]
     if videourl.startswith('//'):
-        videourl = 'https:' + videourl
+        videourl = f'https:{videourl}'
     return videourl
 
 
 def getFly(url):
     videopage = utils.getHtml(url, '')
-    videos = re.compile(r'''source\s*src=['"]([^'"]+).+?label=['"]([^'"]+)''', re.DOTALL | re.IGNORECASE).findall(videopage)
-    if videos:
+    if videos := re.compile(
+        r'''source\s*src=['"]([^'"]+).+?label=['"]([^'"]+)''',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(videopage):
         videos = {label: url for url, label in videos}
         videourl = utils.prefquality(videos, sort_by=lambda x: int(''.join([y for y in x if y.isdigit()])), reverse=True)
         if videourl.startswith('//'):
-            videourl = 'https:' + videourl
+            videourl = f'https:{videourl}'
         return videourl
 
 
@@ -147,12 +169,14 @@ def getHQWO(url):
     epage = utils.getHtml(url, '')
     eurl = re.compile(r'''<script[^\n]+src='([^']+)''', re.DOTALL | re.IGNORECASE).findall(epage)[0]
     videopage = utils.getHtml(eurl, 'https://hqwo.cc/')
-    videos = re.compile(r'''file":\s*"([^"]+).+?label":\s*"([^"]+)''', re.DOTALL | re.IGNORECASE).findall(videopage)
-    if videos:
+    if videos := re.compile(
+        r'''file":\s*"([^"]+).+?label":\s*"([^"]+)''',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(videopage):
         videos = {label: url for url, label in videos}
         videourl = utils.prefquality(videos, sort_by=lambda x: int(''.join([y for y in x if y.isdigit()])), reverse=True)
         if videourl.startswith('//'):
-            videourl = 'https:' + videourl
+            videourl = f'https:{videourl}'
         return videourl
 
 

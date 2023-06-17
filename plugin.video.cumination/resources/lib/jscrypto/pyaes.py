@@ -127,7 +127,7 @@ class AES(object):
 
             # key schedule core:
             # left-rotate by 1 byte
-            word = word[1:4] + word[0:1]
+            word = word[1:4] + word[:1]
 
             # apply S-box to all bytes
             for j in range(4):
@@ -156,7 +156,7 @@ class AES(object):
                 exkey.extend(word)
 
             # Twice for 192-bit key, thrice for 256-bit key
-            for z in range(extra_cnt):
+            for _ in range(extra_cnt):
                 for j in range(4):
                     # mix in bytes from the last subkey
                     word[j] ^= exkey[-self.key_size + j]

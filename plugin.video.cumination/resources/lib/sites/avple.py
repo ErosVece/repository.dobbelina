@@ -36,8 +36,18 @@ CDN = [
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url, 'Cat', site.img_cat)
-    site.add_dir('[COLOR hotpink]Uncensored[/COLOR]', site.url + 'tags/93/1/date', 'List', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search?page=1&sort=date&key=', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Uncensored[/COLOR]',
+        f'{site.url}tags/93/1/date',
+        'List',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search?page=1&sort=date&key=',
+        'Search',
+        site.img_search,
+    )
     List(site.url)
     utils.eod()
 
@@ -68,16 +78,18 @@ def List(url):
             img = video.get("img_preview", "")
             duration = "" if video.get("timeLengh") is None else video.get("timeLengh")
             videopage = '{0}video/{1}'.format(site.url, video.get("_id"))
-            site.add_download_link(name, str(videopage), 'Playvid', img, name, duration=duration)
+            site.add_download_link(
+                name, videopage, 'Playvid', img, name, duration=duration
+            )
     if page < pages:
         if 'page=' in url:
-            npurl = url.replace('page={}'.format(page), 'page={}'.format(page + 1))
-        elif '/{}/date'.format(page) in url:
-            npurl = url.replace('/{}/date'.format(page), '/{}/date'.format(page + 1))
+            npurl = url.replace(f'page={page}', f'page={page + 1}')
+        elif f'/{page}/date' in url:
+            npurl = url.replace(f'/{page}/date', f'/{page + 1}/date')
         else:
             npurl = url
-        cm_page = (utils.addon_sys + "?mode=avple.GotoPage&list_mode=avple.List&url=" + urllib_parse.quote_plus(npurl) + "&np=" + str(page + 1) + "&lp=" + str(pages))
-        cm = [('[COLOR violet]Goto Page #[/COLOR]', 'RunPlugin(' + cm_page + ')')]
+        cm_page = f"{utils.addon_sys}?mode=avple.GotoPage&list_mode=avple.List&url={urllib_parse.quote_plus(npurl)}&np={str(page + 1)}&lp={str(pages)}"
+        cm = [('[COLOR violet]Goto Page #[/COLOR]', f'RunPlugin({cm_page})')]
         site.add_dir('[COLOR hotpink]Next Page...[/COLOR] ({0}/{1})'.format(page + 1, pages), npurl, 'List', site.img_next, contextm=cm)
     utils.eod()
 
@@ -135,17 +147,16 @@ def Cat(url):
 @site.register()
 def GotoPage(url, np, lp):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
+    if pg := dialog.numeric(0, 'Enter Page number'):
         if 'page=' in url:
-            url = url.replace('page={}'.format(np), 'page={}'.format(pg))
-        elif '/{}/date'.format(np) in url:
-            url = url.replace('/{}/date'.format(np), '/{}/date'.format(pg))
+            url = url.replace(f'page={np}', f'page={pg}')
+        elif f'/{np}/date' in url:
+            url = url.replace(f'/{np}/date', f'/{pg}/date')
         if int(lp) > 0 and int(pg) > int(lp):
             utils.notify(msg='Out of range!')
             return
-        contexturl = (utils.addon_sys + "?mode=avple.List&url=" + urllib_parse.quote_plus(url))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode=avple.List&url={urllib_parse.quote_plus(url)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
