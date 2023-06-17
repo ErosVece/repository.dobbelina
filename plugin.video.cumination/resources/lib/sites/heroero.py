@@ -29,11 +29,21 @@ site = AdultSite('heroero', "[COLOR hotpink]Heroero[/COLOR]", 'https://heroero.c
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_search)
-    site.add_dir('[COLOR hotpink]Actress[/COLOR]', site.url + 'actress/', 'Categories', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_search,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Actress[/COLOR]',
+        f'{site.url}actress/',
+        'Categories',
+        site.img_search,
+    )
     site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'see/{}/?mode=async&function=get_block&block_id=list_videos_videos_list_search_result&q={}&category_ids=&sort_by=&from_videos=1&from_albums=1', 'Search', site.img_search)
 
-    List(site.url + 'latest-updates/')
+    List(f'{site.url}latest-updates/')
     utils.eod()
 
 
@@ -50,13 +60,20 @@ def List(url):
     utils.videos_list(site, 'heroero.Playvid', listhtml, delimiter, re_videopage, re_name, re_img, re_duration=re_duration, re_quality=re_quality, contextm='heroero.Related')
 
     if '?' in url:
-        match = re.compile(r'\D(\d+)">Next<', re.IGNORECASE | re.DOTALL).findall(listhtml)
-        if match:
+        if match := re.compile(
+            r'\D(\d+)">Next<', re.IGNORECASE | re.DOTALL
+        ).findall(listhtml):
             npage = int(match[0])
             match = re.compile(r'\D(\d+)">Last<', re.IGNORECASE | re.DOTALL).findall(listhtml)
-            lastp = '/' + match[0] if match else ''
+            lastp = f'/{match[0]}' if match else ''
             nurl = re.sub(r'([&?])from([^=]*)=(\d+)', r'\1from\2={0:02d}', url).format(npage)
-            site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (' + str(npage) + lastp + ')', nurl, 'List', site.img_next, npage)
+            site.add_dir(
+                f'[COLOR hotpink]Next Page...[/COLOR] ({npage}{lastp})',
+                nurl,
+                'List',
+                site.img_next,
+                npage,
+            )
     else:
         re_npurl = 'class="next"><a href="([^"]+)"'
         re_npnr = r'class="next"><a href="[^"]+/(\d+)/"'
@@ -67,8 +84,8 @@ def List(url):
 
 @site.register()
 def Related(url):
-    contexturl = (utils.addon_sys + "?mode=" + str('heroero.List') + "&url=" + urllib_parse.quote_plus(url))
-    xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+    contexturl = f"{utils.addon_sys}?mode=heroero.List&url={urllib_parse.quote_plus(url)}"
+    xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
@@ -92,7 +109,7 @@ def Categories(url):
             name = name.capitalize()
         if 'videos">' in data:
             match = re.compile(r'videos">([^<]+)<', re.IGNORECASE | re.DOTALL).findall(data)
-            name = name + ' [COLOR cyan][{}][/COLOR]'.format(match[0])
+            name = f'{name} [COLOR cyan][{match[0]}][/COLOR]'
         site.add_dir(name, caturl, 'List', img)
     re_npurl = r'class="next"><a href="([^"]+)"'
     re_npnr = r'class="next"><a href="[^"]+/(\d+)/"'
@@ -110,7 +127,7 @@ def Playvid(url, name, download=None):
     html = utils.getHtml(url)
     surl = re.search(r"video_url:\s*'([^']+)'", html)
     if surl:
-        surl = surl.group(1)
+        surl = surl[1]
         if surl.startswith('function/'):
             license = re.findall(r"license_code:\s*'([^']+)", html)[0]
             surl = kvs_decode(surl, license)
@@ -124,12 +141,11 @@ def Playvid(url, name, download=None):
 @site.register()
 def GotoPage(list_mode, url, np, lp):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
-        if url.endswith('/{}/'.format(np)):
-            url = url.replace('/{}/'.format(np), '/{}/'.format(pg))
+    if pg := dialog.numeric(0, 'Enter Page number'):
+        if url.endswith(f'/{np}/'):
+            url = url.replace(f'/{np}/', f'/{pg}/')
         if int(lp) > 0 and int(pg) > int(lp):
             utils.notify(msg='Out of range!')
             return
-        contexturl = (utils.addon_sys + "?mode=" + str(list_mode) + "&url=" + urllib_parse.quote_plus(url))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode={str(list_mode)}&url={urllib_parse.quote_plus(url)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')

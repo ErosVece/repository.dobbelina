@@ -28,9 +28,19 @@ site = AdultSite('blendporn', "[COLOR hotpink]Blendporn[/COLOR]", 'https://www.b
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'channels/', 'Categories', site.img_search)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
-    List(site.url + 'most-recent/')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}channels/',
+        'Categories',
+        site.img_search,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}most-recent/')
     utils.eod()
 
 
@@ -60,20 +70,19 @@ def List(url):
 @site.register()
 def GotoPage(list_mode, url, np, lp):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
-        url = url.replace('page{}.html'.format(np), 'page{}.html'.format(pg))
+    if pg := dialog.numeric(0, 'Enter Page number'):
+        url = url.replace(f'page{np}.html', f'page{pg}.html')
         if int(lp) > 0 and int(pg) > int(lp):
             utils.notify(msg='Out of range!')
             return
-        contexturl = (utils.addon_sys + "?mode=" + str(list_mode) + "&url=" + urllib_parse.quote_plus(url))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode={str(list_mode)}&url={urllib_parse.quote_plus(url)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
 def Related(url):
-    contexturl = (utils.addon_sys + "?mode=" + str('blendporn.List') + "&url=" + urllib_parse.quote_plus(url))
-    xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+    contexturl = f"{utils.addon_sys}?mode=blendporn.List&url={urllib_parse.quote_plus(url)}"
+    xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
@@ -105,10 +114,10 @@ def Playvid(url, name, download=None):
     embedlink = None
     if match:
         embedlink = match[0]
-    else:
-        match = re.compile(r"iframe src='([^']+)'", re.IGNORECASE | re.DOTALL).findall(videohtml)
-        if match:
-            embedlink = match[0]
+    elif match := re.compile(
+        r"iframe src='([^']+)'", re.IGNORECASE | re.DOTALL
+    ).findall(videohtml):
+        embedlink = match[0]
 
     if embedlink:
         embedhtml = utils.getHtml(embedlink, url)

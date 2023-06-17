@@ -28,9 +28,24 @@ site = AdultSite('javhdporn', '[COLOR hotpink]JavHD Porn[/COLOR]', 'https://www2
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Cat', site.img_cat)
-    site.add_dir('[COLOR hotpink]Actress[/COLOR]', site.url + 'pornstars/', 'Cat', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Cat',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Actress[/COLOR]',
+        f'{site.url}pornstars/',
+        'Cat',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
     List('https://www2.javhdporn.net/')
     utils.eod()
 
@@ -44,9 +59,11 @@ def List(url):
         hd = 'HD' if '>HD<' in hd else ''
         site.add_download_link(name, video, 'Play', img, name, duration=duration, quality=hd)
 
-    match = re.compile(r'''class="pagination".+?href="([^"]+)">Next''', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if match:
-        npage = match.group(1)
+    if match := re.compile(
+        r'''class="pagination".+?href="([^"]+)">Next''',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
+        npage = match[1]
         currpg = re.compile(r'''class="pagination".+?current">([^<]+)''', re.DOTALL | re.IGNORECASE).findall(listhtml)[0]
         lastpg = re.compile(r'''class="pagination".+?href=['"].+?([\d]+)/['"]>Last''', re.DOTALL | re.IGNORECASE).findall(listhtml)[0]
         site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (Currently in Page {0} of {1})'.format(currpg, lastpg), npage, 'List', site.img_next)
@@ -60,9 +77,11 @@ def Cat(url):
     for caturl, img, name in match:
         name = utils.cleantext(name)
         site.add_dir(name, caturl, 'List', img)
-    match = re.compile(r'''class="pagination".+?href="([^"]+)">Next''', re.DOTALL | re.IGNORECASE).search(cathtml)
-    if match:
-        npage = match.group(1)
+    if match := re.compile(
+        r'''class="pagination".+?href="([^"]+)">Next''',
+        re.DOTALL | re.IGNORECASE,
+    ).search(cathtml):
+        npage = match[1]
         currpg = re.compile(r'''class="pagination".+?current">([^<]+)''', re.DOTALL | re.IGNORECASE).findall(cathtml)[0]
         lastpg = re.compile(r'''class="pagination".+?href=['"].+?([\d]+)/['"]>Last''', re.DOTALL | re.IGNORECASE).findall(cathtml)[0]
         site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (Currently in Page {0} of {1})'.format(currpg, lastpg), npage, 'Cat', site.img_next)
@@ -83,24 +102,26 @@ def Play(url, name, download=None):
     vp = utils.VideoPlayer(name, download=download)
     vp.progress.update(25, "[CR]Loading video page[CR]")
     videohtml = utils.getHtml(url)
-    m = re.compile(r'video-id="([^"]+).+?(?:mpu-data|data-mpu)="([^"]+).+?data-ver="([^"]+)', re.DOTALL | re.IGNORECASE).search(videohtml)
-    if m:
-        pdata = {'sources': dex(m.group(1), m.group(2), m.group(3), True),
-                 'ver': 2}
+    if m := re.compile(
+        r'video-id="([^"]+).+?(?:mpu-data|data-mpu)="([^"]+).+?data-ver="([^"]+)',
+        re.DOTALL | re.IGNORECASE,
+    ).search(videohtml):
+        pdata = {'sources': dex(m[1], m[2], m[3], True), 'ver': 2}
         vp.progress.update(50, "[CR]Loading video page[CR]")
         hdr = utils.base_hdrs
         hdr.update({'Origin': site.url[:-1],
                     'Referer': site.url})
         r = utils.postHtml('https://video.javhdporn.net/api/play/', form_data=pdata, headers=hdr)
         eurl = json.loads(r).get('data')
-        eurl = dex(m.group(1), eurl, '2')
-        eurl = 'https:' + eurl if eurl.startswith('//') else eurl
+        eurl = dex(m[1], eurl, '2')
+        eurl = f'https:{eurl}' if eurl.startswith('//') else eurl
         hdr.pop('Origin')
         vp.progress.update(75, "[CR]Loading embed page[CR]")
         r = utils.getHtml(eurl, headers=hdr)
-        match = re.compile(r"f8_0x5add\('([^']+)", re.DOTALL | re.IGNORECASE).search(r)
-        if match:
-            link = dex('cGxheWVyaWQ9cFhI', match.group(1), '2', mtype=0)
+        if match := re.compile(
+            r"f8_0x5add\('([^']+)", re.DOTALL | re.IGNORECASE
+        ).search(r):
+            link = dex('cGxheWVyaWQ9cFhI', match[1], '2', mtype=0)
             vp.play_from_link_to_resolve(link)
             return
     vp.progress.close()

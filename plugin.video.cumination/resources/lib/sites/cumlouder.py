@@ -26,12 +26,37 @@ site = AdultSite('cumlouder', '[COLOR hotpink]Cum Louder[/COLOR]', 'https://www.
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Channels[/COLOR]', site.url + 'channels/', 'Channels', site.img_cat)
-    site.add_dir('[COLOR hotpink]Series[/COLOR]', site.url + 'series/', 'Series', site.img_cat)
-    site.add_dir('[COLOR hotpink]Pornstars[/COLOR]', site.url + 'girls/', 'Girls', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/?q=', 'Search', site.img_search)
-    List(site.url + 'porn/')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Channels[/COLOR]',
+        f'{site.url}channels/',
+        'Channels',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Series[/COLOR]',
+        f'{site.url}series/',
+        'Series',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Pornstars[/COLOR]',
+        f'{site.url}girls/',
+        'Girls',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/?q=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}porn/')
     utils.eod()
 
 
@@ -45,12 +70,14 @@ def List(url):
         name = utils.cleantext(name)
         videopage = '{0}embed/{1}/'.format(site.url, videopage)
         if img.startswith('//'):
-            img = 'https:' + img
+            img = f'https:{img}'
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration, quality=hd)
 
-    nextp = re.compile(r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if nextp:
-        site.add_dir('Next Page', site.url[:-1] + nextp.group(1), 'List', site.img_next)
+    if nextp := re.compile(
+        r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
+        site.add_dir('Next Page', site.url[:-1] + nextp[1], 'List', site.img_next)
 
     utils.eod()
 
@@ -68,9 +95,11 @@ def Categories(url):
     while nextpg:
         cathtml = utils.getHtml(url, site.url)
         match += re.compile(r'tag-url.+?href="([^"]+).+?data-src="([^"]+).+?goria">\s*(.*?)\s*<.+?dad">([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
-        np = re.compile(r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next', re.DOTALL | re.IGNORECASE).search(cathtml)
-        if np:
-            url = site.url[:-1] + np.group(1)
+        if np := re.compile(
+            r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next',
+            re.DOTALL | re.IGNORECASE,
+        ).search(cathtml):
+            url = site.url[:-1] + np[1]
         else:
             nextpg = False
     match = sorted(match, key=lambda x: x[2])
@@ -78,8 +107,8 @@ def Categories(url):
         if catpage.startswith('/'):
             catpage = site.url[:-1] + catpage
         if img.startswith('//'):
-            img = 'https:' + img
-        name = name + " [COLOR deeppink]" + videos + " Videos[/COLOR]"
+            img = f'https:{img}'
+        name = f"{name} [COLOR deeppink]{videos} Videos[/COLOR]"
         site.add_dir(name, catpage, 'List', img)
     utils.eod()
 
@@ -91,9 +120,11 @@ def Channels(url):
     while nextpg:
         cathtml = utils.getHtml(url, site.url)
         match += re.compile(r'channel-url.+?href="([^"]+).+?data-src="([^"]+).+?alt="([^"]+).+?videos\s.+?\s([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
-        np = re.compile(r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next', re.DOTALL | re.IGNORECASE).search(cathtml)
-        if np:
-            url = site.url[:-1] + np.group(1)
+        if np := re.compile(
+            r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next',
+            re.DOTALL | re.IGNORECASE,
+        ).search(cathtml):
+            url = site.url[:-1] + np[1]
         else:
             nextpg = False
     match = sorted(match, key=lambda x: x[2])
@@ -101,8 +132,8 @@ def Channels(url):
         if catpage.startswith('/'):
             catpage = site.url[:-1] + catpage
         if img.startswith('//'):
-            img = 'https:' + img
-        name = name + " [COLOR deeppink]" + videos + "[/COLOR]"
+            img = f'https:{img}'
+        name = f"{name} [COLOR deeppink]{videos}[/COLOR]"
         site.add_dir(name, catpage, 'List', img)
     utils.eod()
 
@@ -114,9 +145,11 @@ def Series(url):
     while nextpg:
         cathtml = utils.getHtml(url, site.url)
         match += re.compile(r'<div\s*itemprop.+?href="([^"]+).+?data-src="([^"]+).+?name">([^<]+).+?p>([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
-        np = re.compile(r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next', re.DOTALL | re.IGNORECASE).search(cathtml)
-        if np:
-            url = site.url[:-1] + np.group(1)
+        if np := re.compile(
+            r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next',
+            re.DOTALL | re.IGNORECASE,
+        ).search(cathtml):
+            url = site.url[:-1] + np[1]
         else:
             nextpg = False
     match = sorted(match, key=lambda x: x[2])
@@ -124,8 +157,8 @@ def Series(url):
         if catpage.startswith('/'):
             catpage = site.url[:-1] + catpage
         if img.startswith('//'):
-            img = 'https:' + img
-        name = name.title() + " [COLOR deeppink]" + videos + "[/COLOR]"
+            img = f'https:{img}'
+        name = f"{name.title()} [COLOR deeppink]{videos}[/COLOR]"
         site.add_dir(name, catpage, 'List', img)
     utils.eod()
 
@@ -138,13 +171,15 @@ def Girls(url):
         if catpage.startswith('/'):
             catpage = site.url[:-1] + catpage
         if img.startswith('//'):
-            img = 'https:' + img
-        name = name + " [COLOR deeppink]" + videos + "[/COLOR]"
+            img = f'https:{img}'
+        name = f"{name} [COLOR deeppink]{videos}[/COLOR]"
         site.add_dir(name, catpage, 'List', img)
 
-    np = re.compile(r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next', re.DOTALL | re.IGNORECASE).search(cathtml)
-    if np:
-        site.add_dir('Next Page', site.url[:-1] + np.group(1), 'Girls', site.img_next)
+    if np := re.compile(
+        r'class="btn-pagination"\s*itemprop="name"\s*href="([^"]+)">Next',
+        re.DOTALL | re.IGNORECASE,
+    ).search(cathtml):
+        site.add_dir('Next Page', site.url[:-1] + np[1], 'Girls', site.img_next)
 
     utils.eod()
 
@@ -153,7 +188,7 @@ def Girls(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title

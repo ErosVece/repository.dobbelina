@@ -28,12 +28,34 @@ site = AdultSite('celebsroulette', '[COLOR hotpink]CelebsRoulette[/COLOR]', 'htt
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Models[/COLOR]', site.url + 'models/1/', 'Models', site.img_cat)
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'tags/', 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Playlists[/COLOR]', site.url + 'playlists/?mode=async&function=get_block&block_id=list_playlists_common_playlists_list&sort_by=&from=01', 'Playlist', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/?mode=async&function=get_block&block_id=list_videos_videos_list_search_result&category_ids=&sort_by=&from_videos=01&q=', 'Search', site.img_search)
-    List(site.url + 'latest-updates/')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Models[/COLOR]',
+        f'{site.url}models/1/',
+        'Models',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]', f'{site.url}tags/', 'Tags', site.img_cat
+    )
+    site.add_dir(
+        '[COLOR hotpink]Playlists[/COLOR]',
+        f'{site.url}playlists/?mode=async&function=get_block&block_id=list_playlists_common_playlists_list&sort_by=&from=01',
+        'Playlist',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/?mode=async&function=get_block&block_id=list_videos_videos_list_search_result&category_ids=&sort_by=&from_videos=01&q=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}latest-updates/')
     utils.eod()
 
 
@@ -47,28 +69,32 @@ def List(url):
     for videopage, name, img in match:
         name = utils.cleantext(name)
 
-        cm = []
-        cm_lookupinfo = (utils.addon_sys + "?mode=" + str('celebsroulette.Lookupinfo') + "&url=" + urllib_parse.quote_plus(videopage))
-        cm.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + cm_lookupinfo + ')'))
-        cm_related = (utils.addon_sys + "?mode=" + str('celebsroulette.Related') + "&url=" + urllib_parse.quote_plus(videopage))
-        cm.append(('[COLOR deeppink]Related videos[/COLOR]', 'RunPlugin(' + cm_related + ')'))
+        cm_lookupinfo = f"{utils.addon_sys}?mode=celebsroulette.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        cm = [('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({cm_lookupinfo})')]
+        cm_related = f"{utils.addon_sys}?mode=celebsroulette.Related&url={urllib_parse.quote_plus(videopage)}"
+        cm.append(
+            (
+                '[COLOR deeppink]Related videos[/COLOR]',
+                f'RunPlugin({cm_related})',
+            )
+        )
 
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=cm)
 
-    nextp = re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).findall(listhtml)
-    if nextp:
+    if nextp := re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).findall(
+        listhtml
+    ):
         np = nextp[0]
         pg = int(np) - 1
-        r = re.search(r'/\d+/', url)
-        if r:
+        if r := re.search(r'/\d+/', url):
             next_page = re.sub(r'/\d+/', '/{0}/'.format(np), url)
         elif 'from_videos={0:02d}'.format(pg) in url:
             next_page = url.replace('from_videos={0:02d}'.format(pg), 'from_videos={0:02d}'.format(int(np)))
         else:
             next_page = url + '{0}/'.format(np)
         lp = re.compile(r':(\d+)">Last', re.DOTALL | re.IGNORECASE).findall(listhtml)
-        lp = '/' + lp[0] if lp else ''
-        site.add_dir('Next Page (' + np + lp + ')', next_page, 'List', site.img_next)
+        lp = f'/{lp[0]}' if lp else ''
+        site.add_dir(f'Next Page ({np}{lp})', next_page, 'List', site.img_next)
 
     utils.eod()
 
@@ -81,8 +107,9 @@ def ListPL(url):
         name = utils.cleantext(name)
         site.add_download_link(name, video, 'Playvid', img, name)
 
-    nextp = re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).findall(listhtml)
-    if nextp:
+    if nextp := re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).findall(
+        listhtml
+    ):
         np = nextp[0]
         pg = int(np) - 1
         if 'from={0:02d}'.format(pg) in url:
@@ -90,8 +117,8 @@ def ListPL(url):
         else:
             next_page = url + '{0}/'.format(np)
         lp = re.compile(r':(\d+)">Last', re.DOTALL | re.IGNORECASE).findall(listhtml)
-        lp = '/' + lp[0] if lp else ''
-        site.add_dir('Next Page (' + np + lp + ')', next_page, 'ListPL', site.img_next)
+        lp = f'/{lp[0]}' if lp else ''
+        site.add_dir(f'Next Page ({np}{lp})', next_page, 'ListPL', site.img_next)
 
     utils.eod()
 
@@ -105,8 +132,9 @@ def Playlist(url):
         lpage += '?mode=async&function=get_block&block_id=playlist_view_playlist_view&sort_by=&from=01'
         site.add_dir(name, lpage, 'ListPL', img)
 
-    nextp = re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).findall(listhtml)
-    if nextp:
+    if nextp := re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).findall(
+        listhtml
+    ):
         np = nextp[0]
         pg = int(np) - 1
         if 'from={0:02d}'.format(pg) in url:
@@ -114,8 +142,8 @@ def Playlist(url):
         else:
             next_page = url + '{0}/'.format(np)
         lp = re.compile(r':(\d+)">Last', re.DOTALL | re.IGNORECASE).findall(listhtml)
-        lp = '/' + lp[0] if lp else ''
-        site.add_dir('Next Page (' + np + lp + ')', next_page, 'Playlist', site.img_next)
+        lp = f'/{lp[0]}' if lp else ''
+        site.add_dir(f'Next Page ({np}{lp})', next_page, 'Playlist', site.img_next)
 
     utils.eod()
 
@@ -124,7 +152,7 @@ def Playlist(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '-')
         searchUrl = searchUrl + title
@@ -146,7 +174,7 @@ def Categories(url):
     cathtml = utils.getHtml(url)
     match = re.compile(r'<a\s*class="item"\s*href="([^"]+)"\s*title="([^"]+)">.+?src="([^"]+)".+?class="videos">([^<]+)<', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, videos in match:
-        name = utils.cleantext(name) + " [COLOR deeppink]" + videos + "[/COLOR]"
+        name = f"{utils.cleantext(name)} [COLOR deeppink]{videos}[/COLOR]"
         site.add_dir(name, catpage, 'List', img)
     utils.eod()
 
@@ -156,15 +184,16 @@ def Models(url):
     html = utils.getHtml(url)
     match = re.compile(r'class="item"\s*href="([^"]+)".+?(?:src="([^"]+)"|>no image<).+?class="title">([^<]+)<.+?"videos">([^<]+)<', re.DOTALL | re.IGNORECASE).findall(html)
     for murl, img, name, videos in match:
-        name = utils.cleantext(name) + " [COLOR deeppink]" + videos + "[/COLOR]"
+        name = f"{utils.cleantext(name)} [COLOR deeppink]{videos}[/COLOR]"
         site.add_dir(name, murl, 'List', img)
 
-    nextp = re.compile(r'class="pagination".+?next".+?(\d+)"', re.DOTALL | re.IGNORECASE).search(html)
-    if nextp:
-        np = nextp.group(1)
+    if nextp := re.compile(
+        r'class="pagination".+?next".+?(\d+)"', re.DOTALL | re.IGNORECASE
+    ).search(html):
+        np = nextp[1]
         next_page = re.sub(r'/\d+/', '/{0}/'.format(np), url)
         lp = re.compile(r'class="pagination".+?last".+?(\d+)"', re.DOTALL | re.IGNORECASE).findall(html)[0]
-        site.add_dir('Next Page ( ' + np + ' / ' + lp + ' )', next_page, 'Models', site.img_next)
+        site.add_dir(f'Next Page ( {np} / {lp} )', next_page, 'Models', site.img_next)
 
     utils.eod()
 
@@ -176,12 +205,12 @@ def Playvid(url, name, download=None):
     html = utils.getHtml(url)
     surl = re.search(r"video_url:\s*'([^']+)'", html)
     if surl:
-        surl = surl.group(1)
+        surl = surl[1]
         if surl.startswith('function/'):
             license = re.findall(r"license_code:\s*'([^']+)", html)[0]
             surl = kvs_decode(surl, license)
             surl = utils.getVideoLink(surl)
-            surl += '|Referer=' + site.url
+            surl += f'|Referer={site.url}'
     else:
         vp.progress.close()
         return
@@ -202,5 +231,5 @@ def Lookupinfo(url):
 
 @site.register()
 def Related(url):
-    contexturl = (utils.addon_sys + "?mode=" + str('celebsroulette.List') + "&url=" + urllib_parse.quote_plus(url))
-    xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+    contexturl = f"{utils.addon_sys}?mode=celebsroulette.List&url={urllib_parse.quote_plus(url)}"
+    xbmc.executebuiltin(f'Container.Update({contexturl})')

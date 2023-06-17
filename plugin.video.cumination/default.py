@@ -59,21 +59,52 @@ if addon.getSetting('custom_sites') == 'true':
 
 @url_dispatcher.register()
 def INDEX():
-    url_dispatcher.add_dir('[COLOR white]{}[/COLOR]'.format(utils.i18n('sites')), '', 'site_list',
-                           basics.cum_image('cum-sites.png'), '', list_avail=False)
-    url_dispatcher.add_dir('[COLOR white]{}[/COLOR]'.format(utils.i18n('fav_videos')), '', 'favorites.List',
-                           basics.cum_image('cum-fav.png'), '', list_avail=False)
+    url_dispatcher.add_dir(
+        f"[COLOR white]{utils.i18n('sites')}[/COLOR]",
+        '',
+        'site_list',
+        basics.cum_image('cum-sites.png'),
+        '',
+        list_avail=False,
+    )
+    url_dispatcher.add_dir(
+        f"[COLOR white]{utils.i18n('fav_videos')}[/COLOR]",
+        '',
+        'favorites.List',
+        basics.cum_image('cum-fav.png'),
+        '',
+        list_avail=False,
+    )
     download_path = addon.getSetting('download_path')
     if download_path != '' and xbmcvfs.exists(download_path):
-        url_dispatcher.add_dir('[COLOR white]{}[/COLOR]'.format(utils.i18n('dnld_folder')), download_path, 'OpenDownloadFolder',
-                               basics.cum_image('cum-downloads.png'), '', list_avail=False)
+        url_dispatcher.add_dir(
+            f"[COLOR white]{utils.i18n('dnld_folder')}[/COLOR]",
+            download_path,
+            'OpenDownloadFolder',
+            basics.cum_image('cum-downloads.png'),
+            '',
+            list_avail=False,
+        )
 
-    url_dispatcher.add_dir('[COLOR white]{}[/COLOR]'.format(utils.i18n('custom_list')), '', 'favorites.create_custom_list', Folder=False, list_avail=False)
+    url_dispatcher.add_dir(
+        f"[COLOR white]{utils.i18n('custom_list')}[/COLOR]",
+        '',
+        'favorites.create_custom_list',
+        Folder=False,
+        list_avail=False,
+    )
     for rowid, name in favorites.get_custom_lists():
         url_dispatcher.add_dir(name, str(rowid), 'favorites.load_custom_list', list_avail=False, custom_list=True)
     favorites.load_custom_list('main')
-    url_dispatcher.add_dir('[COLOR white]{}[/COLOR]'.format(utils.i18n('clear_cache')), '', 'utils.clear_cache',
-                           basics.cuminationicon, '', Folder=False, list_avail=False)
+    url_dispatcher.add_dir(
+        f"[COLOR white]{utils.i18n('clear_cache')}[/COLOR]",
+        '',
+        'utils.clear_cache',
+        basics.cuminationicon,
+        '',
+        Folder=False,
+        list_avail=False,
+    )
 
     utils.eod(basics.addon_handle, False)
 
@@ -81,15 +112,13 @@ def INDEX():
 @url_dispatcher.register()
 def site_list():
     custom_listitems = favorites.get_custom_listitems()
-    custom_listitems_dict = {}
-    for x in custom_listitems:
-        custom_listitems_dict[x[0]] = x[1]
+    custom_listitems_dict = {x[0]: x[1] for x in custom_listitems}
     for x in sorted(AdultSite.get_sites(), key=lambda y: y.get_clean_title().lower(), reverse=False):
         if x.custom:
             utils.kodilog('{0}: {1}'.format(utils.i18n('list_custom'), x.title), xbmc.LOGDEBUG)
         title = x.title
-        if title in custom_listitems_dict.keys():
-            title = '{} [COLOR red]{}[/COLOR]'.format(title, ''.ljust(custom_listitems_dict[title], '*'))
+        if title in custom_listitems_dict:
+            title = f"{title} [COLOR red]{''.ljust(custom_listitems_dict[title], '*')}[/COLOR]"
         url_dispatcher.add_dir(title, x.url, x.default_mode, x.image, about=x.about, custom=x.custom)
     utils.eod(basics.addon_handle, False)
 
@@ -98,7 +127,7 @@ def site_list():
 def OpenDownloadFolder(url):
     xbmc.executebuiltin('Dialog.Close(busydialog, true)')
     xbmc.sleep(100)
-    xbmc.executebuiltin('ActivateWindow(Videos, ' + url + ')')
+    xbmc.executebuiltin(f'ActivateWindow(Videos, {url})')
 
 
 @url_dispatcher.register()
@@ -111,7 +140,7 @@ def smrSettings():
 def about_site(name, about, custom):
     heading = '{0} {1}'.format(utils.i18n('about'), name)
     dir = basics.customSitesDir if custom else basics.aboutDir
-    with open(TRANSLATEPATH(os.path.join(dir, '{}.txt'.format(about)))) as f:
+    with open(TRANSLATEPATH(os.path.join(dir, f'{about}.txt'))) as f:
         announce = f.read()
     utils.textBox(heading, announce)
 
@@ -132,13 +161,16 @@ def change():
     utils.textBox(heading, announce)
 
 
-if not addon.getSetting('cuminationage') == 'true':
-    age = dialog.yesno(utils.i18n('warn'), utils.i18n('warn_msg'),
-                       nolabel=utils.i18n('exit'), yeslabel=utils.i18n('enter'))
-    if age:
-        addon.setSetting('cuminationage', 'true')
-else:
+if addon.getSetting('cuminationage') == 'true':
     age = True
+
+elif age := dialog.yesno(
+    utils.i18n('warn'),
+    utils.i18n('warn_msg'),
+    nolabel=utils.i18n('exit'),
+    yeslabel=utils.i18n('enter'),
+):
+    addon.setSetting('cuminationage', 'true')
 
 
 def main(argv=None):

@@ -39,16 +39,24 @@ def List(url):
     for video in videos:
         if '>Photos<' in video:
             continue
-        match = re.compile(r'href="([^"]+)"\s*title="([^"]+)".+?duration.+?item__stat-label">([\d:]+)<(.+?)img src="([^""]+)"', re.DOTALL | re.IGNORECASE).findall(video)
-        if match:
+        if match := re.compile(
+            r'href="([^"]+)"\s*title="([^"]+)".+?duration.+?item__stat-label">([\d:]+)<(.+?)img src="([^""]+)"',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(video):
             videopage, name, duration, hd, img = match[0]
             hd = 'HD' if '>HD<' in hd else ''
             name = utils.cleantext(name)
-            videopage = 'https:' + videopage if videopage.startswith('//') else videopage
+            videopage = f'https:{videopage}' if videopage.startswith('//') else videopage
             site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration, quality=hd)
-    nextp = re.search(r"title='Next' href='([^']+)'", videos[-1], re.DOTALL)
-    if nextp:
-        site.add_dir('Next Page', url[:url.rfind('/') + 1] + nextp.group(1), 'List', site.img_next)
+    if nextp := re.search(
+        r"title='Next' href='([^']+)'", videos[-1], re.DOTALL
+    ):
+        site.add_dir(
+            'Next Page',
+            url[: url.rfind('/') + 1] + nextp[1],
+            'List',
+            site.img_next,
+        )
 
     utils.eod()
 
@@ -61,15 +69,17 @@ def Playvid(url, name, download=None):
 
 @site.register()
 def Categories(url):
-    cathtml = utils._getHtml(site.url + 'filter/videos', url)
+    cathtml = utils._getHtml(f'{site.url}filter/videos', url)
     cats = cathtml.split('citem__link')
     cats.pop(0)
     cats.pop(0)
     for cat in cats:
-        match = re.compile('href="([^"]+).+?src="([^"]+).+?title">([^<]+)', re.DOTALL | re.IGNORECASE).findall(cat)
-        if match:
+        if match := re.compile(
+            'href="([^"]+).+?src="([^"]+).+?title">([^<]+)',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(cat):
             catpage, catimg, name = match[0]
-            catpage = 'https:' + catpage if catpage.startswith('//') else catpage
-            catimg = 'https:' + catimg if catimg.startswith('//') else catimg
+            catpage = f'https:{catpage}' if catpage.startswith('//') else catpage
+            catimg = f'https:{catimg}' if catimg.startswith('//') else catimg
             site.add_dir(name, catpage, 'List', catimg)
     utils.eod()

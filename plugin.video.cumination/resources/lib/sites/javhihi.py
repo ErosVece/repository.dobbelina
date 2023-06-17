@@ -45,10 +45,25 @@ def getBaselink(url):
 @site3.register(default_mode=True)
 def Main(url):
     siteurl = getBaselink(url)
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', siteurl + 'movie', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Pornstars[/COLOR]', siteurl + 'pornstar', 'Pornstars', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', siteurl + 'movie?q=', 'Search', site.img_search)
-    List(siteurl + 'movie')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{siteurl}movie',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Pornstars[/COLOR]',
+        f'{siteurl}pornstar',
+        'Pornstars',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{siteurl}movie?q=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{siteurl}movie')
     utils.eod()
 
 
@@ -64,14 +79,15 @@ def List(url):
     for videopage, name, img, name2 in match:
         name = utils.cleantext(name)
         if not img.startswith('http'):
-            img = 'http:' + img
+            img = f'http:{img}'
         videopage = siteurl + videopage
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=name2)
 
     pgurl = None
-    pagination = re.search(r'a\s*href="([^"]+)[^>]+>View\s*more', listhtml, re.DOTALL)
-    if pagination:
-        pgurl = siteurl + pagination.group(1)
+    if pagination := re.search(
+        r'a\s*href="([^"]+)[^>]+>View\s*more', listhtml, re.DOTALL
+    ):
+        pgurl = siteurl + pagination[1]
         site.add_dir('Next Page', pgurl, 'List', site.img_next)
 
     utils.eod()
@@ -82,15 +98,16 @@ def Playvid(url, name, download=None):
     vp = utils.VideoPlayer(name, download)
     videopage = utils.getHtml(url, '')
     videopage = re.compile(r'player-wrapper(.+?)container', re.DOTALL | re.IGNORECASE).findall(videopage)[0]
-    eurl = re.compile(r'<iframe.+?src="([^"]+)', re.DOTALL | re.IGNORECASE).search(videopage)
-    if eurl:
-        vp.play_from_link_to_resolve(eurl.group(1))
-    else:
-        sources = re.compile(r'"file":\s*"([^"]+).+?"label":\s"([^"]+)', re.DOTALL | re.IGNORECASE).findall(videopage)
-        if sources:
-            sources = {key: value for value, key in sources}
-            videourl = utils.prefquality(sources, reverse=True)
-            vp.play_from_direct_link(videourl)
+    if eurl := re.compile(
+        r'<iframe.+?src="([^"]+)', re.DOTALL | re.IGNORECASE
+    ).search(videopage):
+        vp.play_from_link_to_resolve(eurl[1])
+    elif sources := re.compile(
+        r'"file":\s*"([^"]+).+?"label":\s"([^"]+)', re.DOTALL | re.IGNORECASE
+    ).findall(videopage):
+        sources = {key: value for value, key in sources}
+        videourl = utils.prefquality(sources, reverse=True)
+        vp.play_from_direct_link(videourl)
 
 
 @site.register()
@@ -112,14 +129,15 @@ def Pornstars(url):
     match = re.compile(r'class="pornstar-item.+?href="([^"]+).+?src="([^"]+).+?b>(\d*).+?">([^<]+)', re.DOTALL).findall(cathtml)
     for catpage, img, name2, name in match:
         catpage = siteurl + catpage
-        name = utils.cleantext(name) + ' [COLOR cyan][{} Videos][/COLOR]'.format(name2)
+        name = f'{utils.cleantext(name)} [COLOR cyan][{name2} Videos][/COLOR]'
         if not img.startswith('http'):
-            img = 'http:' + img
+            img = f'http:{img}'
         site.add_dir(name, catpage, 'List', img)
 
-    pagination = re.search(r'class="next"><a\s*href="([^"]+)', cathtml, re.DOTALL)
-    if pagination:
-        pgurl = siteurl + pagination.group(1)
+    if pagination := re.search(
+        r'class="next"><a\s*href="([^"]+)', cathtml, re.DOTALL
+    ):
+        pgurl = siteurl + pagination[1]
         site.add_dir('Next Page', pgurl, 'Pornstars', site.img_next)
 
     utils.eod()
@@ -129,7 +147,7 @@ def Pornstars(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title

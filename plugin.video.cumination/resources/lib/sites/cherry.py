@@ -25,9 +25,9 @@ site = AdultSite('cherry', '[COLOR hotpink]Cherry TV[/COLOR]', 'https://cherry.t
 
 @site.register(default_mode=True)
 def Main():
-    female = True if utils.addon.getSetting("chatfemale") == "true" else False
-    couple = True if utils.addon.getSetting("chatcouple") == "true" else False
-    trans = True if utils.addon.getSetting("chattrans") == "true" else False
+    female = utils.addon.getSetting("chatfemale") == "true"
+    couple = utils.addon.getSetting("chatcouple") == "true"
+    trans = utils.addon.getSetting("chattrans") == "true"
     site.add_dir('[COLOR red]Refresh Cherry images[/COLOR]', '', 'clean_database', '', Folder=False)
     site.add_dir('[COLOR hotpink]Featured[/COLOR]', 'featured', 'List', '', '')
     if female:
@@ -106,9 +106,9 @@ def clean_database(showdialog=True):
         with conn:
             list = conn.execute("SELECT id, cachedurl FROM texture WHERE url LIKE '%%%s%%';" % ".cherry.tv")
             for row in list:
-                conn.execute("DELETE FROM sizes WHERE idtexture LIKE '%s';" % row[0])
+                conn.execute(f"DELETE FROM sizes WHERE idtexture LIKE '{row[0]}';")
                 try:
-                    os.remove(utils.TRANSLATEPATH("special://thumbnails/" + row[1]))
+                    os.remove(utils.TRANSLATEPATH(f"special://thumbnails/{row[1]}"))
                 except:
                     pass
             conn.execute("DELETE FROM texture WHERE url LIKE '%%%s%%';" % ".cherry.tv")
@@ -147,8 +147,7 @@ def Playvid(url, name):
 
     data = json.loads(response).get('data', {}).get('streamer', {}).get('broadcast', {})
     if data and data.get('broadcastStatus') == 'Live':
-        surl = data.get('pullUrl')
-        if surl:
+        if surl := data.get('pullUrl'):
             vp.progress.update(75, "[CR]Found Stream[CR]")
             vp.play_from_direct_link(surl)
             return

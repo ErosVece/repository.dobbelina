@@ -27,7 +27,12 @@ site = AdultSite('javhoho', '[COLOR hotpink]JavHoHo[/COLOR]', 'https://www1.javh
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url, 'Cat', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
     List(site.url)
 
 
@@ -48,7 +53,12 @@ def List(url):
             badge += '[COLOR blue][premium][/COLOR]'
         name = utils.cleantext(name)
         if 'Collection' in name:
-            site.add_dir('{} [COLOR dimgray]{}[/COLOR]'.format(badge, name), videopage, 'Collection', img)
+            site.add_dir(
+                f'{badge} [COLOR dimgray]{name}[/COLOR]',
+                videopage,
+                'Collection',
+                img,
+            )
         else:
             site.add_download_link(name, videopage, 'Playvid', img, name)
     try:
@@ -57,7 +67,12 @@ def List(url):
         if last_page:
             last = last_page[0].split('/')[-2]
         page_nr = re.findall(r'\d+', next_page)[-1]
-        site.add_dir('Next Page (' + page_nr + ('/' + last if last_page else '') + ')', next_page, 'List', site.img_next)
+        site.add_dir(
+            f'Next Page ({page_nr}' + (f'/{last}' if last_page else '') + ')',
+            next_page,
+            'List',
+            site.img_next,
+        )
     except:
         pass
     utils.eod()
@@ -66,26 +81,32 @@ def List(url):
 @site.register()
 def Collection(url):
     listhtml = utils.getHtml(url)
-    match = re.compile(r'data-token="([^"]+)"\s*data-account-id="([^"]+)"\s*data-drive-id="([^"]+)".+?data-path="([^"]+)"', re.DOTALL | re.IGNORECASE).findall(listhtml)
-    if match:
-        listtoken, account_id, drive_id, folderPath = match[0]
-        posturl = 'https://www1.javhoho.com/wp-admin/admin-ajax.php'
-        form_data = {}
-        form_data['listtoken'] = listtoken
-        form_data['account_id'] = account_id
-        form_data['drive_id'] = drive_id
-        form_data['folderPath'] = folderPath
-        form_data['lastFolder'] = ''
-        form_data['sort'] = 'name:asc'
-        form_data['action'] = 'shareonedrive-get-filelist'
-        form_data['_ajax_nonce'] = '44a0ac11f9'
-        form_data['mobile'] = 'false'
-        form_data['query'] = ''
-        response = utils.postHtml(posturl, form_data=form_data)
-    else:
+    if not (
+        match := re.compile(
+            r'data-token="([^"]+)"\s*data-account-id="([^"]+)"\s*data-drive-id="([^"]+)".+?data-path="([^"]+)"',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(listhtml)
+    ):
         return
-    match = re.compile(r'''class='entry file.+?data-src='([^']+)'(.+?)<span>([^<]+)<.+?<source data-src=\\"([^"]+)"''', re.DOTALL | re.IGNORECASE).findall(response)
-    if match:
+    listtoken, account_id, drive_id, folderPath = match[0]
+    posturl = 'https://www1.javhoho.com/wp-admin/admin-ajax.php'
+    form_data = {
+        'listtoken': listtoken,
+        'account_id': account_id,
+        'drive_id': drive_id,
+        'folderPath': folderPath,
+        'lastFolder': '',
+        'sort': 'name:asc',
+        'action': 'shareonedrive-get-filelist',
+        '_ajax_nonce': '44a0ac11f9',
+        'mobile': 'false',
+        'query': '',
+    }
+    response = utils.postHtml(posturl, form_data=form_data)
+    if match := re.compile(
+        r'''class='entry file.+?data-src='([^']+)'(.+?)<span>([^<]+)<.+?<source data-src=\\"([^"]+)"''',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(response):
         for img, duration, name, videourl in match:
             m = re.compile(r"class='entry-duration'.+?>([\s\d:]+)<", re.DOTALL | re.IGNORECASE).findall(duration)
             duration = m[0] if m else ''
@@ -107,7 +128,7 @@ def Playvideo(url, name, download=None):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '%20')
         searchUrl = searchUrl + title
@@ -152,7 +173,7 @@ def Playvid(url, name, download=None):
                 listhtml = utils.getHtml(item)
                 videourl = re.compile('file: "(.+?)"', re.DOTALL).findall(listhtml)[0]
                 if videourl.startswith('/'):
-                    videourl = 'https://www.bitporno.com' + videourl
+                    videourl = f'https://www.bitporno.com{videourl}'
                 videoArray['Bitporno'] = videourl
             except:
                 pass

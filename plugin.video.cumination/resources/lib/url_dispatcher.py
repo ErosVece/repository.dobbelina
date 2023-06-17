@@ -42,14 +42,18 @@ class URL_Dispatcher(object):
         self.img_next = cum_image('cum-next.png')
 
     def get_full_mode(self, mode):
-        return mode if '.' in str(mode) else '{}.{}'.format(self.module_name, mode)
+        return mode if '.' in str(mode) else f'{self.module_name}.{mode}'
 
     def register(self):
 
         def decorator(f):
             mode = '{}.{}'.format(self.module_name, f.__name__)
             all_args = getargspec(f)
-            func_args = all_args.args[0:-len(all_args.defaults)] if all_args.defaults else all_args.args
+            func_args = (
+                all_args.args[: -len(all_args.defaults)]
+                if all_args.defaults
+                else all_args.args
+            )
             func_kwargs = all_args.args[len(func_args):] if all_args.defaults else []
 
             if mode in self.__class__.func_registry:
@@ -61,6 +65,7 @@ class URL_Dispatcher(object):
             self.__class__.kwargs_registry[mode] = func_kwargs
 
             return f
+
         return decorator
 
     def add_dir(self, name, url, mode, iconimage=None, page=None, channel=None, section=None, keyword='', Folder=True,
@@ -90,7 +95,7 @@ class URL_Dispatcher(object):
         queries: a dictionary of the parameters to be passed to the called function
         """
         if mode not in cls.func_registry:
-            message = 'Error: Attempt to invoke unregistered mode {}'.format(mode)
+            message = f'Error: Attempt to invoke unregistered mode {mode}'
             raise Exception(message)
 
         args = []
@@ -104,7 +109,7 @@ class URL_Dispatcher(object):
                     args.append(cls.__coerce(queries[arg]))
                     del unused_args[arg]
                 else:
-                    message = 'Error: mode {} requested argument {} but it was not provided.'.format(mode, arg)
+                    message = f'Error: mode {mode} requested argument {arg} but it was not provided.'
                     raise Exception(message)
 
         if cls.kwargs_registry[mode]:
@@ -117,8 +122,6 @@ class URL_Dispatcher(object):
 
         if 'mode' in unused_args:
             del unused_args['mode']  # delete mode last in case it's used by the target function
-        if unused_args:
-            pass
         cls.func_registry[mode](*args, **kwargs)
 
     # since all params are passed as strings, do any conversions necessary to get good types (e.g. boolean)

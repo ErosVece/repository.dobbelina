@@ -30,19 +30,27 @@ site = AdultSite('myfreecams', '[COLOR hotpink]MyFreeCams[/COLOR]', 'https://www
 def getMFC():
     serverlist = utils.getHtml('https://app.myfreecams.com/server')
     jsonlist = json.loads(serverlist)
-    MFC_SERVERS = {
+    return {
         'WZOBSSERVERS': jsonlist.get("wzobs_servers"),
         'H5SERVERS': jsonlist.get("h5video_servers"),
         'NGSERVERS': jsonlist.get("ngvideo_servers"),
-        'CHATSERVERS': [x for x in jsonlist.get("chat_servers") if x.startswith('wchat')]
+        'CHATSERVERS': [
+            x for x in jsonlist.get("chat_servers") if x.startswith('wchat')
+        ],
     }
-    return MFC_SERVERS
 
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'php/model_tags.php?vcc=1545329519', 'Tags', '')
-    List(site.url + 'php/model_explorer.php?get_contents=1&sort=cam_score&selection=public&page=1')
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]',
+        f'{site.url}php/model_tags.php?vcc=1545329519',
+        'Tags',
+        '',
+    )
+    List(
+        f'{site.url}php/model_explorer.php?get_contents=1&sort=cam_score&selection=public&page=1'
+    )
 
 
 @site.register()
@@ -66,8 +74,7 @@ def List(url, page=1):
 
 @site.register()
 def Playvid(url, name):
-    videourl = myfreecam_start(url)
-    if videourl:
+    if videourl := myfreecam_start(url):
         vp = utils.VideoPlayer(name)
         vp.play_from_direct_link(videourl)
     else:
@@ -76,7 +83,7 @@ def Playvid(url, name):
 
 @site.register()
 def Tags(url):
-    url = site.url + 'php/model_tags.php?get_tags=1&tag_sort=&word_source=tags&display_style=list&member_mode=0'
+    url = f'{site.url}php/model_tags.php?get_tags=1&tag_sort=&word_source=tags&display_style=list&member_mode=0'
 
     page = utils._getHtml(url)
     res = re.compile(r"g_oTags.SelectTag\('selected_field','(.+?)'.+?10px.+?>(.+?)<", re.IGNORECASE | re.MULTILINE | re.DOTALL).findall(page)
@@ -100,14 +107,15 @@ def TagsList(url):
 
 # from iptvplayer
 
-vs_str = {}
-vs_str[0] = "PUBLIC"
-vs_str[2] = "AWAY"
-vs_str[12] = "PVT"
-vs_str[13] = "GROUP"
-vs_str[90] = "CAM OFF"
-vs_str[127] = "OFFLINE"
-vs_str[128] = "TRUEPVT"
+vs_str = {
+    0: "PUBLIC",
+    2: "AWAY",
+    12: "PVT",
+    13: "GROUP",
+    90: "CAM OFF",
+    127: "OFFLINE",
+    128: "TRUEPVT",
+}
 
 
 def fc_decode_json(m):
@@ -147,22 +155,16 @@ def read_model_data(m, MFC_SERVERS):
     flags = camgirlinfo['flags']
     u_info = msg['u']
 
-    if 'phase' in u_info:
-        PHASE = u_info['phase']
-    else:
-        PHASE = ''
-
+    PHASE = u_info['phase'] if 'phase' in u_info else ''
     try:
         idx = str(u_info['camserv'])
         idx = idx.encode("utf-8") if utils.PY2 else idx
         if idx in WZOBSSERVERS:
             CAMGIRLSERVER = WZOBSSERVERS[idx]
-        else:
-            if idx in H5SERVERS:
-                CAMGIRLSERVER = H5SERVERS[idx]
-            else:
-                if idx in NGSERVERS:
-                    CAMGIRLSERVER = NGSERVERS[idx]
+        elif idx in H5SERVERS:
+            CAMGIRLSERVER = H5SERVERS[idx]
+        elif idx in NGSERVERS:
+            CAMGIRLSERVER = NGSERVERS[idx]
 
         if vs != 0:
             CAMGIRLSERVER = 0
@@ -171,12 +173,9 @@ def read_model_data(m, MFC_SERVERS):
 
     truepvt = ((flags & 8) == 8)
 
-    buf = usr + " =>"
+    buf = f"{usr} =>"
     try:
-        if truepvt == 1:
-            buf += " (TRUEPVT)"
-        else:
-            buf += " ({0})".format(vs_str[vs])
+        buf += " (TRUEPVT)" if truepvt == 1 else " ({0})".format(vs_str[vs])
     except KeyError:
         pass
 
@@ -214,9 +213,9 @@ def myfreecam_start(url):
             if bool(hdr) == 0:
                 break
 
-            fc = hdr.group(1)
+            fc = hdr[1]
 
-            mlen = int(fc[0:6])
+            mlen = int(fc[:6])
             fc_type = int(fc[6:])
 
             msg = sock_buf[6: 6 + mlen]
@@ -239,11 +238,12 @@ def myfreecam_start(url):
                 break
     ws.close()
     if CAMGIRLSERVER != 0:
-        if PHASE == '':
-            Url = "https://{0}.myfreecams.com/NxServer/ngrp:mfc_{1}.f4v_mobile/playlist.m3u8?nc=0.5863279394620062".format(CAMGIRLSERVER, CAMGIRLCHANID)
-        else:
-            Url = "https://{0}.myfreecams.com/NxServer/ngrp:mfc_a_{1}.f4v_mobile/playlist.m3u8?nc=0.5863279394620062".format(CAMGIRLSERVER, CAMGIRLCHANID)
-
-        return Url
-    else:
-        pass
+        return (
+            "https://{0}.myfreecams.com/NxServer/ngrp:mfc_{1}.f4v_mobile/playlist.m3u8?nc=0.5863279394620062".format(
+                CAMGIRLSERVER, CAMGIRLCHANID
+            )
+            if PHASE == ''
+            else "https://{0}.myfreecams.com/NxServer/ngrp:mfc_a_{1}.f4v_mobile/playlist.m3u8?nc=0.5863279394620062".format(
+                CAMGIRLSERVER, CAMGIRLCHANID
+            )
+        )

@@ -28,10 +28,10 @@ IOS_UA = {'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) 
 
 @site.register(default_mode=True)
 def Main():
-    female = True if utils.addon.getSetting("chatfemale") == "true" else False
-    male = True if utils.addon.getSetting("chatmale") == "true" else False
-    couple = True if utils.addon.getSetting("chatcouple") == "true" else False
-    trans = True if utils.addon.getSetting("chattrans") == "true" else False
+    female = utils.addon.getSetting("chatfemale") == "true"
+    male = utils.addon.getSetting("chatmale") == "true"
+    couple = utils.addon.getSetting("chatcouple") == "true"
+    trans = utils.addon.getSetting("chattrans") == "true"
     site.add_dir('[COLOR red]Refresh Cam4 images[/COLOR]', '', 'clean_database', '', Folder=False)
     if female:
         site.add_dir('[COLOR hotpink]Females[/COLOR]', '&gender=female&broadcastType=female_group&broadcastType=solo&broadcastType=male_female_group', 'List', '', 1)
@@ -51,9 +51,9 @@ def clean_database(showdialog=True):
         with conn:
             list = conn.execute("SELECT id, cachedurl FROM texture WHERE url LIKE '%%%s%%';" % ".cam4s.com")
             for row in list:
-                conn.execute("DELETE FROM sizes WHERE idtexture LIKE '%s';" % row[0])
+                conn.execute(f"DELETE FROM sizes WHERE idtexture LIKE '{row[0]}';")
                 try:
-                    os.remove(utils.TRANSLATEPATH("special://thumbnails/" + row[1]))
+                    os.remove(utils.TRANSLATEPATH(f"special://thumbnails/{row[1]}"))
                 except:
                     pass
             conn.execute("DELETE FROM texture WHERE url LIKE '%%%s%%';" % ".cam4.com")
@@ -72,8 +72,7 @@ def List(url, page=1):
     cams = json.loads(listhtml).get('users', {})
     for cam in cams:
         name = cam.get('username')
-        age = cam.get('age')
-        if age:
+        if age := cam.get('age'):
             name = '{0} [COLOR deeppink][{1}][/COLOR]'.format(name, age)
         hd = ''
         if cam.get('hdStream'):
@@ -86,19 +85,19 @@ def List(url, page=1):
         subject = ''
 
         if cam.get('viewers'):
-            subject += '[COLOR deeppink]Viewers:[/COLOR] {}[CR]'.format(cam.get('viewers'))
+            subject += f"[COLOR deeppink]Viewers:[/COLOR] {cam.get('viewers')}[CR]"
         if cam.get('countryCode'):
-            subject += '[CR][COLOR deeppink]Country:[/COLOR] {}[CR]'.format(utils.get_country(cam.get('countryCode')))
+            subject += f"[CR][COLOR deeppink]Country:[/COLOR] {utils.get_country(cam.get('countryCode'))}[CR]"
             name = '{0} [COLOR blue][{1}][/COLOR]'.format(name, utils.get_country(cam.get('countryCode')))
         if cam.get('languages'):
             langs = [utils.get_language(lang) for lang in cam.get('languages')]
-            subject += '[COLOR deeppink]Languages:[/COLOR] {}[CR]'.format(', '.join(langs))
+            subject += f"[COLOR deeppink]Languages:[/COLOR] {', '.join(langs)}[CR]"
         if cam.get('resolution'):
-            subject += '[COLOR deeppink]Resolution:[/COLOR] {}[CR]'.format(cam.get('resolution'))
+            subject += f"[COLOR deeppink]Resolution:[/COLOR] {cam.get('resolution')}[CR]"
         if cam.get('sexPreference'):
-            subject += '[CR][COLOR deeppink]Sexual Preference:[/COLOR] {}[CR]'.format(cam.get('sexPreference'))
+            subject += f"[CR][COLOR deeppink]Sexual Preference:[/COLOR] {cam.get('sexPreference')}[CR]"
         if cam.get('statusMessage'):
-            subject += '[CR]{}[CR][CR]'.format(cam.get('statusMessage').encode('utf8') if utils.PY2 else cam.get('statusMessage'))
+            subject += f"[CR]{cam.get('statusMessage').encode('utf8') if utils.PY2 else cam.get('statusMessage')}[CR][CR]"
         if cam.get('showTags'):
             subject += ', '.join(cam.get('showTags')).encode('utf8') if utils.PY2 else ', '.join(cam.get('showTags'))
 

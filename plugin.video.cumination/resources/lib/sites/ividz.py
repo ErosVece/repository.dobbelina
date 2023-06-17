@@ -28,9 +28,14 @@ addon = utils.addon
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url, 'Cat', '', '')
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'tags/', 'Tag', '', '')
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s=', 'Search', site.img_search)
-    List(site.url + '?orderby=date')
+    site.add_dir('[COLOR hotpink]Tags[/COLOR]', f'{site.url}tags/', 'Tag', '', '')
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?s=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}?orderby=date')
 
 
 @site.register()
@@ -42,9 +47,15 @@ def List(url):
 
         site.add_download_link(name, videopage, 'Play', img, name)
 
-    np = re.compile('Next page" href="([^"]+)"', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        site.add_dir('Next Page... ({0})'.format(np.group(1).split('/')[-2]), np.group(1), 'List', site.img_next)
+    if np := re.compile(
+        'Next page" href="([^"]+)"', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        site.add_dir(
+            'Next Page... ({0})'.format(np[1].split('/')[-2]),
+            np[1],
+            'List',
+            site.img_next,
+        )
     utils.eod()
 
 

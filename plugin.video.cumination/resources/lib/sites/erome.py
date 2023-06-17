@@ -27,8 +27,13 @@ site = AdultSite("erome", "[COLOR hotpink]Erome[/COLOR]", "https://www.erome.com
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search?o=new&q=', 'Search', site.img_search)
-    List(site.url + 'explore/new')
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search?o=new&q=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}explore/new')
 
 
 @site.register()
@@ -55,9 +60,11 @@ def List(url):
         elif vids:
             site.add_dir(name, iurl, 'List2', img, desc=name, section='vids')
 
-    np = re.compile(r'class="pagination.+?href="([^"]+)"\s*rel="next">', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        nurl = urllib_parse.urljoin(url, np.group(1)).replace('&amp;', '&')
+    if np := re.compile(
+        r'class="pagination.+?href="([^"]+)"\s*rel="next">',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
+        nurl = urllib_parse.urljoin(url, np[1]).replace('&amp;', '&')
         currpg = re.findall(r'class="pagination.+?"active"[^\d]+(\d+)', listhtml, re.DOTALL)[0]
         lastpg = re.findall(r'class="pagination.+?(\d+)</a></li>\s*<li><a\s*href="[^"]+"\s*rel="next"', listhtml, re.DOTALL)[0]
         site.add_dir('Next Page... (Currently in Page {0} of {1})'.format(currpg, lastpg), nurl, 'List', site.img_next)
@@ -85,10 +92,13 @@ def List2(url, section):
                     surl += '|Referer={0}'.format(site.url)
                     site.add_download_link('Video {0}'.format(itemcount), surl, 'Playvid', img, quality=hd)
                 elif 'class="video"' not in item and section == 'pics':
-                    img = re.search(r'class="img-front(?:\s*lasyload)?"\s*(?:data-)?src="([^"]+)', item, re.DOTALL)
-                    if img:
+                    if img := re.search(
+                        r'class="img-front(?:\s*lasyload)?"\s*(?:data-)?src="([^"]+)',
+                        item,
+                        re.DOTALL,
+                    ):
                         itemcount += 1
-                        img = img.group(1) + '|Referer={0}'.format(site.url)
+                        img = img[1] + '|Referer={0}'.format(site.url)
                         site.add_img_link('Photo {0}'.format(itemcount), img, 'Showpic')
 
     utils.eod()
