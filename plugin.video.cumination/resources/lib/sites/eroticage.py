@@ -26,9 +26,19 @@ site = AdultSite('eroticage', '[COLOR hotpink]EroticAge[/COLOR]', 'https://www.e
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s=', 'Search', site.img_search)
-    List(site.url + '?filter=latest')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?s=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}?filter=latest')
     utils.eod()
 
 
@@ -44,18 +54,20 @@ def List(url):
     for videopage, name, img, duration in match:
         name = utils.cleantext(name)
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration)
-    nextp = re.compile(r'href="([^"]+)">Next<', re.DOTALL | re.IGNORECASE).findall(html[0])
-    if nextp:
+    if nextp := re.compile(
+        r'href="([^"]+)">Next<', re.DOTALL | re.IGNORECASE
+    ).findall(html[0]):
         np = nextp[0]
         npage = re.findall(r'/\d+/', np)[-1].replace('/', '')
         lp = re.compile(r'/(\d+)/\D*?>Last<', re.DOTALL | re.IGNORECASE).findall(html[0])
-        lp = '/' + lp[-1] if lp else ''
-        site.add_dir('Next Page ({}{})'.format(npage, lp), np, 'List', site.img_next)
-    else:
-        nextp = re.compile(r'class="current">.+?href="([^"]+)"[^>]+>(\d+)<', re.DOTALL | re.IGNORECASE).findall(html[0])
-        if nextp:
-            np, npage = nextp[0]
-            site.add_dir('Next Page ({})'.format(npage), np, 'List', site.img_next)
+        lp = f'/{lp[-1]}' if lp else ''
+        site.add_dir(f'Next Page ({npage}{lp})', np, 'List', site.img_next)
+    elif nextp := re.compile(
+        r'class="current">.+?href="([^"]+)"[^>]+>(\d+)<',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(html[0]):
+        np, npage = nextp[0]
+        site.add_dir(f'Next Page ({npage})', np, 'List', site.img_next)
     utils.eod()
 
 
@@ -90,17 +102,17 @@ def Playvid(url, name, download=None):
         if match:
             iframehtml = utils.getHtml(match[0])
             match = re.compile(r"iframeElement.src\s*=\s*'([^']+)'", re.IGNORECASE | re.DOTALL).findall(iframehtml)
-            if match:
-                playerurl = 'https:' + match[0] if match[0].startswith('//') else match[0]
-                playerhtml = utils.getHtml(playerurl)
-                match = re.compile(r'"contentProviderUrl":"([^"]+)"', re.IGNORECASE | re.DOTALL).findall(playerhtml)
-                if match:
-                    contenturl = match[0].replace(r'\/', '/')
-                    headers = {'User-Agent': utils.USER_AGENT, 'X-Requested-With': 'XMLHttpRequest'}
-                    contenthtml = utils.getHtml(contenturl, playerurl, headers)
-                    jsondata = json.loads(contenthtml)
-                    videourl = jsondata['data']['contentUrl']
-                    if videourl.startswith('//'):
-                        videourl = 'https:' + videourl
-                    vp.progress.update(75, "[CR]Loading video page[CR]")
-                    vp.play_from_direct_link(videourl)
+        if match:
+            playerurl = f'https:{match[0]}' if match[0].startswith('//') else match[0]
+            playerhtml = utils.getHtml(playerurl)
+            match = re.compile(r'"contentProviderUrl":"([^"]+)"', re.IGNORECASE | re.DOTALL).findall(playerhtml)
+        if match:
+            contenturl = match[0].replace(r'\/', '/')
+            headers = {'User-Agent': utils.USER_AGENT, 'X-Requested-With': 'XMLHttpRequest'}
+            contenthtml = utils.getHtml(contenturl, playerurl, headers)
+            jsondata = json.loads(contenthtml)
+            videourl = jsondata['data']['contentUrl']
+            if videourl.startswith('//'):
+                videourl = f'https:{videourl}'
+            vp.progress.update(75, "[CR]Loading video page[CR]")
+            vp.play_from_direct_link(videourl)

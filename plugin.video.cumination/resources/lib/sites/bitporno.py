@@ -26,8 +26,13 @@ site = AdultSite('bitporno', '[COLOR hotpink]Bitporno[/COLOR]', 'https://www.bit
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url, 'Cat', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?q=', 'Search', site.img_search)
-    List(site.url + 'search/all/sort-recent/time-someday/cat-/page-')
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?q=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}search/all/sort-recent/time-someday/cat-/page-')
 
 
 @site.register()
@@ -37,15 +42,19 @@ def List(url):
     videos.pop(0)
     for video in videos:
         hd = 'HD' if '>HD<' in video else ''
-        match = re.compile(r'href="([^"]+)"><img src="([^"]+)".+?>([^<]+)</div>', re.DOTALL | re.IGNORECASE).findall(video)
-        if match:
+        if match := re.compile(
+            r'href="([^"]+)"><img src="([^"]+)".+?>([^<]+)</div>',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(video):
             videourl, img, name = match[0]
             name = utils.cleantext(name)
             site.add_download_link(name, site.url[:-1] + videourl, 'Play', img, name, quality=hd)
 
     if videos:
-        match = re.compile(r'href="([^"]+-(\d+))"\s*class="pages">Next<', re.DOTALL | re.IGNORECASE).findall(videos[-1])
-        if match:
+        if match := re.compile(
+            r'href="([^"]+-(\d+))"\s*class="pages">Next<',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(videos[-1]):
             npage, np = match[0]
             site.add_dir('[COLOR hotpink]Next Page...[/COLOR] ({0})'.format(np), site.url[:-1] + npage, 'List', site.img_next)
     utils.eod()

@@ -11,7 +11,7 @@ class AdultSite(URL_Dispatcher):
     def __init__(self, name, title, url, image=None, about=None, webcam=False):
         self.default_mode = ''
         self.name = name
-        self.title = title + '[COLOR white] - webcams[/COLOR]' if webcam else title
+        self.title = f'{title}[COLOR white] - webcams[/COLOR]' if webcam else title
         self.url = url
         self.image = basics.cum_image(image) if image else ''
         self.about = about
@@ -56,16 +56,19 @@ class AdultSite(URL_Dispatcher):
 
     @classmethod
     def get_site_by_name(cls, name):
-        for ins in cls.instances:
-            if ins.name == name and ins.default_mode:
-                return ins
-        return None
+        return next(
+            (
+                ins
+                for ins in cls.instances
+                if ins.name == name and ins.default_mode
+            ),
+            None,
+        )
 
     @classmethod
     def get_sites_by_name(cls, names):
         for name in names:
-            site = cls.get_site_by_name(name)
-            if site:
+            if site := cls.get_site_by_name(name):
                 yield site
 
     @classmethod

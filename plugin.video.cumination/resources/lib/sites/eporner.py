@@ -27,11 +27,26 @@ site = AdultSite('eporner', '[COLOR hotpink]Eporner[/COLOR]', 'https://www.eporn
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'cats/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Pornstars[/COLOR]', site.url + 'pornstar-list/', 'Pornstars', site.img_cat)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}cats/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Pornstars[/COLOR]',
+        f'{site.url}pornstar-list/',
+        'Pornstars',
+        site.img_cat,
+    )
     site.add_dir('[COLOR hotpink]Lists[/COLOR]', site.url, 'Lists', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
-    List(site.url + 'recent/')
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}recent/')
     utils.eod()
 
 
@@ -45,16 +60,22 @@ def List(url):
     for i, vid in enumerate(vids):
         if i == 0:
             continue
-        match = re.compile(r'Quality"><span>(.+?)<.+? href="([^"]+)".+?src="(http[^"]+)".+?href.+?>(.+?)<.+?title="Duration">([^"]+)<\/', re.DOTALL | re.IGNORECASE).findall(vid)
-        if match:
+        if match := re.compile(
+            r'Quality"><span>(.+?)<.+? href="([^"]+)".+?src="(http[^"]+)".+?href.+?>(.+?)<.+?title="Duration">([^"]+)<\/',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(vid):
             hd, videopage, img, name, duration = match[0]
             name = utils.cleantext(name)
             site.add_download_link(name, site.url[:-1] + videopage, 'Playvid', img, name, duration=duration, quality=hd)
-    nextp = re.compile(r"href='([^']+)' class='nmnext' title='Next page'", re.DOTALL | re.IGNORECASE).findall(vids[-1])
-    if nextp:
+    if nextp := re.compile(
+        r"href='([^']+)' class='nmnext' title='Next page'",
+        re.DOTALL | re.IGNORECASE,
+    ).findall(vids[-1]):
         nextp = nextp[0]
         page = re.findall(r'\d+', nextp)[-1]
-        site.add_dir('Next Page ({})'.format(page), site.url[:-1] + nextp, 'List', site.img_next)
+        site.add_dir(
+            f'Next Page ({page})', site.url[:-1] + nextp, 'List', site.img_next
+        )
     utils.eod()
 
 
@@ -70,15 +91,16 @@ def Playvid(url, name, download=None):
     vid = embed[0]
     s = embed[1]
     hash = ''.join((encode_base_n(int(s[lb:lb + 8], 16), 36) for lb in range(0, 32, 8)))
-    jsonUrl = 'https://www.eporner.com/xhr/video/' + vid + '?hash=' + hash + '&domain=www.eporner.com&fallback=false&embed=true&supportedFormats=dash,mp4'
+    jsonUrl = f'https://www.eporner.com/xhr/video/{vid}?hash={hash}&domain=www.eporner.com&fallback=false&embed=true&supportedFormats=dash,mp4'
     listJson = utils.getHtml(jsonUrl, '')
     videoJson = json.loads(listJson)
     vp.progress.update(75, "[CR]Loading video page[CR]")
-    videoArray = {}
-    for (k, v) in videoJson['sources']['mp4'].items():
-        videoArray[k] = v['src']
-    videourl = utils.prefquality(videoArray, sort_by=lambda x: int(''.join([y for y in x if y.isdigit()])), reverse=True)
-    if videourl:
+    videoArray = {k: v['src'] for k, v in videoJson['sources']['mp4'].items()}
+    if videourl := utils.prefquality(
+        videoArray,
+        sort_by=lambda x: int(''.join([y for y in x if y.isdigit()])),
+        reverse=True,
+    ):
         vp.play_from_direct_link(videourl)
 
 
@@ -103,54 +125,62 @@ def Pornstars(url):
         return None
     match = re.compile(r'class="mbprofile"[^=]+href="([^"]+)" title="([^"]+)".+?img src="([^"]+)".+?Videos:[^>]+>(\d+)<', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, count in match:
-        name = utils.cleantext(name) + "[COLOR deeppink] " + count + "[/COLOR]"
+        name = f"{utils.cleantext(name)}[COLOR deeppink] {count}[/COLOR]"
         catpage = site.url[:-1] + catpage
         site.add_dir(name, catpage, 'List', '')
-    nextp = re.compile(r"href='([^']+)' class='nmnext' title='Next page'", re.DOTALL | re.IGNORECASE).findall(cathtml)
-    if nextp:
+    if nextp := re.compile(
+        r"href='([^']+)' class='nmnext' title='Next page'",
+        re.DOTALL | re.IGNORECASE,
+    ).findall(cathtml):
         page = re.findall(r'\d+', nextp[0])[-1]
-        site.add_dir('Next Page ({})'.format(page), site.url[:-1] + nextp[0], 'Pornstars', site.img_next)
+        site.add_dir(
+            f'Next Page ({page})',
+            site.url[:-1] + nextp[0],
+            'Pornstars',
+            site.img_next,
+        )
     utils.eod()
 
 
 @site.register()
 def Lists(url):
-    lists = {}
-    lists['HD Porn 1080p Videos - Recent'] = site.url + '/cat/hd-1080p/'
-    lists['HD Porn 1080p Videos - Top Rated'] = site.url + '/cat/hd-1080p/SORT-top-rated/'
-    lists['HD Porn 1080p Videos - Longest'] = site.url + '/cat/hd-1080p/SORT-longest/'
-    lists['60 FPS Porn Videos - Recent'] = site.url + '/cat/60fps/'
-    lists['60 FPS Porn Videos - Top Rated'] = site.url + '/cat/60fps/SORT-top-rated/'
-    lists['60 FPS Porn Videos - Longest'] = site.url + '/cat/60fps/SORT-longest/'
-    lists['Popular Porn Videos'] = site.url + '/popular-videos/'
-    lists['Best HD Porn Videos'] = site.url + '/top-rated/'
-    lists['Currently Watched Porn Videos'] = site.url + '/currently/'
-    lists['4K Porn Ultra HD - Recent'] = site.url + '/cat/4k-porn/'
-    lists['4K Porn Ultra HD - Top Rated'] = site.url + '/cat/4k-porn/SORT-top-rated/'
-    lists['4K Porn Ultra HD - Longest'] = site.url + '/cat/4k-porn/SORT-longest/'
-    lists['HD Sex Porn Videos - Recent'] = site.url + '/cat/hd-sex/'
-    lists['HD Sex Porn Videos - Top Rated'] = site.url + '/cat/hd-sex/SORT-top-rated/'
-    lists['HD Sex Porn Videos - Longest'] = site.url + '/cat/hd-sex/SORT-longest/'
-    lists['Amateur Porn Videos - Recent'] = site.url + '/cat/amateur/'
-    lists['Amateur Porn Videos - Top Rated'] = site.url + '/cat/amateur/SORT-top-rated/'
-    lists['Amateur Porn Videos - Longest'] = site.url + '/cat/amateur/SORT-longest/'
-    lists['Solo Girls Porn Videos - Recent'] = site.url + '/cat/solo/'
-    lists['Solo Girls Porn Videos - Top Rated'] = site.url + '/cat/solo/top-rated/'
-    lists['Solo Girls Porn Videos - Longest'] = site.url + '/cat/solo/longest/'
-    lists['VR Porn Videos - Recent'] = site.url + '/cat/vr-porn/'
-    lists['VR Porn Videos - Top Rated'] = site.url + '/cat/vr-porn/SORT-top-rated/'
-    lists['VR Porn Videos - Longest'] = site.url + '/cat/vr-porn/SORT-longest/'
-    url = utils.selector('Select', lists)
-    if not url:
+    lists = {
+        'HD Porn 1080p Videos - Recent': f'{site.url}/cat/hd-1080p/',
+        'HD Porn 1080p Videos - Top Rated': f'{site.url}/cat/hd-1080p/SORT-top-rated/',
+        'HD Porn 1080p Videos - Longest': f'{site.url}/cat/hd-1080p/SORT-longest/',
+        '60 FPS Porn Videos - Recent': f'{site.url}/cat/60fps/',
+        '60 FPS Porn Videos - Top Rated': f'{site.url}/cat/60fps/SORT-top-rated/',
+        '60 FPS Porn Videos - Longest': f'{site.url}/cat/60fps/SORT-longest/',
+        'Popular Porn Videos': f'{site.url}/popular-videos/',
+        'Best HD Porn Videos': f'{site.url}/top-rated/',
+        'Currently Watched Porn Videos': f'{site.url}/currently/',
+        '4K Porn Ultra HD - Recent': f'{site.url}/cat/4k-porn/',
+        '4K Porn Ultra HD - Top Rated': f'{site.url}/cat/4k-porn/SORT-top-rated/',
+        '4K Porn Ultra HD - Longest': f'{site.url}/cat/4k-porn/SORT-longest/',
+        'HD Sex Porn Videos - Recent': f'{site.url}/cat/hd-sex/',
+        'HD Sex Porn Videos - Top Rated': f'{site.url}/cat/hd-sex/SORT-top-rated/',
+        'HD Sex Porn Videos - Longest': f'{site.url}/cat/hd-sex/SORT-longest/',
+        'Amateur Porn Videos - Recent': f'{site.url}/cat/amateur/',
+        'Amateur Porn Videos - Top Rated': f'{site.url}/cat/amateur/SORT-top-rated/',
+        'Amateur Porn Videos - Longest': f'{site.url}/cat/amateur/SORT-longest/',
+        'Solo Girls Porn Videos - Recent': f'{site.url}/cat/solo/',
+        'Solo Girls Porn Videos - Top Rated': f'{site.url}/cat/solo/top-rated/',
+        'Solo Girls Porn Videos - Longest': f'{site.url}/cat/solo/longest/',
+        'VR Porn Videos - Recent': f'{site.url}/cat/vr-porn/',
+        'VR Porn Videos - Top Rated': f'{site.url}/cat/vr-porn/SORT-top-rated/',
+        'VR Porn Videos - Longest': f'{site.url}/cat/vr-porn/SORT-longest/',
+    }
+    if url := utils.selector('Select', lists):
+        List(url)
+    else:
         return
-    List(url)
 
 
 @site.register()
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title
@@ -158,8 +188,8 @@ def Search(url, keyword=None):
 
 
 def encode_base_n(num, n, table=None):
-    FULL_TABLE = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
     if not table:
+        FULL_TABLE = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
         table = FULL_TABLE[:n]
 
     if n > len(table):

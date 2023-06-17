@@ -40,17 +40,16 @@ def List(url):
     for videopage, name, img in match:
         name = utils.cleantext(name)
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                          + "?mode=" + str('freeomovie.Lookupinfo')
-                          + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        contexturl = f"{utils.addon_sys}?mode=freeomovie.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu)
 
-    nextp = re.compile('rel="next" href="([^"]+)"', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if nextp:
-        nextp = nextp.group(1)
+    if nextp := re.compile(
+        'rel="next" href="([^"]+)"', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        nextp = nextp[1]
         site.add_dir('Next Page... ({0})'.format(nextp.split('/')[-2]), nextp, 'List', site.img_next)
 
     utils.eod()
@@ -60,7 +59,7 @@ def List(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title

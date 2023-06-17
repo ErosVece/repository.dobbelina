@@ -33,10 +33,7 @@ import re
 def detect(source):
     """Detects whether `source` is P.A.C.K.E.R. coded."""
     source = source.replace(' ', '')
-    if re.search(r'eval\(function\(p,a,c,k,e,(?:r|d)', source):
-        return True
-    else:
-        return False
+    return bool(re.search(r'eval\(function\(p,a,c,k,e,(?:r|d)', source))
 
 
 def unpack(source):
@@ -73,15 +70,13 @@ def _filterargs(source):
 
 def _replacestrings(source):
     """Strip string lookup table (list) and replace values in source."""
-    match = re.search(r'var *(_\w+)\=\["(.*?)"\];', source, re.DOTALL)
-
-    if match:
+    if match := re.search(r'var *(_\w+)\=\["(.*?)"\];', source, re.DOTALL):
         varname, strings = match.groups()
-        startpoint = len(match.group(0))
+        startpoint = len(match[0])
         lookup = strings.split('","')
         variable = '%s[%%d]' % varname
         for index, value in enumerate(lookup):
-            source = source.replace(variable % index, '"%s"' % value)
+            source = source.replace(variable % index, f'"{value}"')
         return source[startpoint:]
     return source
 
@@ -103,12 +98,15 @@ class Unbaser(object):
             self.unbase = lambda string: int(string, base)
         else:
             if base < 62:
-                self.ALPHABET[base] = self.ALPHABET[62][0:base]
+                self.ALPHABET[base] = self.ALPHABET[62][:base]
             elif 62 < base < 95:
-                self.ALPHABET[base] = self.ALPHABET[95][0:base]
+                self.ALPHABET[base] = self.ALPHABET[95][:base]
             # Build conversion dictionary cache
             try:
-                self.dictionary = dict((cipher, index) for index, cipher in enumerate(self.ALPHABET[base]))
+                self.dictionary = {
+                    cipher: index
+                    for index, cipher in enumerate(self.ALPHABET[base])
+                }
             except KeyError:
                 raise TypeError('Unsupported base encoding.')
 
@@ -119,10 +117,10 @@ class Unbaser(object):
 
     def _dictunbaser(self, string):
         """Decodes a  value to an integer."""
-        ret = 0
-        for index, cipher in enumerate(string[::-1]):
-            ret += (self.base ** index) * self.dictionary[cipher]
-        return ret
+        return sum(
+            (self.base**index) * self.dictionary[cipher]
+            for index, cipher in enumerate(string[::-1])
+        )
 
 
 class UnpackingError(Exception):

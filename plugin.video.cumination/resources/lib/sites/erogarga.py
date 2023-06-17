@@ -31,8 +31,13 @@ site = AdultSite('erogarga', '[COLOR hotpink]EroGarga[/COLOR]', 'https://www.ero
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url, 'Cat', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s=', 'Search', site.img_search)
-    List(site.url + '?filter=latest')
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?s=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}?filter=latest')
 
 
 @site.register()
@@ -44,8 +49,10 @@ def List(url):
     for video in videos:
         if 'type-photos' in video:
             continue
-        match = re.compile(r'href="([^"]+).+?data-src="([^"]+)".+?<span>([^<]+)<', re.DOTALL | re.IGNORECASE).findall(video)
-        if match:
+        if match := re.compile(
+            r'href="([^"]+).+?data-src="([^"]+)".+?<span>([^<]+)<',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(video):
             videourl, img, name = match[0]
             name = utils.cleantext(name)
             site.add_download_link(name, videourl, 'Play', img, name)
@@ -60,14 +67,13 @@ def List(url):
 @site.register()
 def GotoPage(list_mode, url, np, lp):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
-        url = url.replace('/page/{}'.format(np), '/page/{}'.format(pg))
+    if pg := dialog.numeric(0, 'Enter Page number'):
+        url = url.replace(f'/page/{np}', f'/page/{pg}')
         if int(lp) > 0 and int(pg) > int(lp):
             utils.notify(msg='Out of range!')
             return
-        contexturl = (utils.addon_sys + "?mode=" + str(list_mode) + "&url=" + urllib_parse.quote_plus(url))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode={str(list_mode)}&url={urllib_parse.quote_plus(url)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
@@ -121,11 +127,13 @@ def Play(url, name, download=None):
         videolink = videolink.replace('&amp;', '&') + '|referer=https://www.pornflip.com/'
     else:
         playerhtml = utils.getHtml(playerurl, url)
-        match = re.compile(r'''var hash = '([^']+)'.+?var baseURL = '([^']+)'.+?getPhiPlayer\(hash,'([^']+)',"(\d+)"\);''', re.DOTALL | re.IGNORECASE).findall(playerhtml)
-        if match:
+        if match := re.compile(
+            r'''var hash = '([^']+)'.+?var baseURL = '([^']+)'.+?getPhiPlayer\(hash,'([^']+)',"(\d+)"\);''',
+            re.DOTALL | re.IGNORECASE,
+        ).findall(playerhtml):
             hash, baseurl, alternative, order = match[0]
             formdata = {'vid': hash, 'alternative': alternative, 'ord': order}
-            data = utils.postHtml(baseurl + 'ajax_sources.php', form_data=formdata)
+            data = utils.postHtml(f'{baseurl}ajax_sources.php', form_data=formdata)
             data = data.replace(r'\/', '/')
             jsondata = json.loads(data)
             videolink = jsondata["source"][0]["file"]

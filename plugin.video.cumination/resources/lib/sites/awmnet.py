@@ -81,10 +81,22 @@ def Main():
 def SiteMain(url):
     siteurl = getBaselink(url)
     site.add_dir('[COLOR hotpink]Categories[/COLOR]', siteurl, 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Pornstars[/COLOR]', siteurl + 'pornstar/', 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', siteurl + 'a-z/', 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', siteurl + 'search/', 'Search', site.img_search)
-    List(siteurl + 'new?pricing=free')
+    site.add_dir(
+        '[COLOR hotpink]Pornstars[/COLOR]',
+        f'{siteurl}pornstar/',
+        'Tags',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]', f'{siteurl}a-z/', 'Tags', site.img_cat
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{siteurl}search/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{siteurl}new?pricing=free')
 
 
 @site.register()
@@ -93,16 +105,24 @@ def List(url):
     listhtml = utils.getHtml(url, siteurl)
     match = re.compile(r'class="item-link.+?href="([^"]+).+?<img.+?src="([^"]+).+?rounded">(.*?)</div.+?<h3.+?>([^<]+).+?text-sm"><a.+?>([^<]+)', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for videourl, thumb, info, name, provider in match:
-        name = '[COLOR yellow][{}][/COLOR] {}'.format(provider, utils.cleantext(name))
+        name = f'[COLOR yellow][{provider}][/COLOR] {utils.cleantext(name)}'
         hd = 'HD' if ' HD' in info else ''
         duration = re.findall(r'([\d:]+)', info)[0]
         site.add_download_link(name, siteurl[:-1] + videourl.replace('&amp;', '&'), 'Playvid', thumb, name, duration=duration, quality=hd)
 
-    p = re.search(r'label="Next\s*Page".+?href="([^"]+)', listhtml, re.DOTALL | re.IGNORECASE)
-    if p:
-        purl = siteurl[:-1] + p.group(1).replace('&amp;', '&')
+    if p := re.search(
+        r'label="Next\s*Page".+?href="([^"]+)',
+        listhtml,
+        re.DOTALL | re.IGNORECASE,
+    ):
+        purl = siteurl[:-1] + p[1].replace('&amp;', '&')
         curr_pg = re.findall(r'label="Current\s*Page".+?>(\d+)', listhtml)[0]
-        site.add_dir('Next Page... [COLOR hotpink](Currently in Page {})[/COLOR]'.format(curr_pg), purl, 'List', site.img_next)
+        site.add_dir(
+            f'Next Page... [COLOR hotpink](Currently in Page {curr_pg})[/COLOR]',
+            purl,
+            'List',
+            site.img_next,
+        )
     utils.eod()
 
 
@@ -110,7 +130,7 @@ def List(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '%20')
         searchUrl = searchUrl + title + '?pricing=free'
@@ -123,7 +143,7 @@ def Tags(url):
     cathtml = utils.getHtml(url, siteurl)
     match = re.compile(r'<li\s*class="category".+?href="([^"]+)">([^<]+).+?>([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, videos in match:
-        name = utils.cleantext(name) + " [COLOR deeppink](" + videos + " videos)[/COLOR]"
+        name = f"{utils.cleantext(name)} [COLOR deeppink]({videos} videos)[/COLOR]"
         site.add_dir(name, siteurl[:-1] + catpage + '?pricing=free', 'List', site.img_cat)
     utils.eod()
 
@@ -134,7 +154,7 @@ def Categories(url):
     cathtml = utils.getHtml(url, siteurl)
     match = re.compile(r'class="item-link\s*relative\s*block"\s*href="([^"]+)"\s*title="([^"]+).+?<img.+?src="([^"]+).+?fa-video[^<]+</i>\s*([^<]+)<', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, image, videos in match:
-        name = utils.cleantext(name) + " [COLOR deeppink](" + videos + " videos)[/COLOR]"
+        name = f"{utils.cleantext(name)} [COLOR deeppink]({videos} videos)[/COLOR]"
         site.add_dir(name, siteurl[:-1] + catpage + '?pricing=free', 'List', image)
     xbmcplugin.addSortMethod(utils.addon_handle, xbmcplugin.SORT_METHOD_TITLE)
     utils.eod()

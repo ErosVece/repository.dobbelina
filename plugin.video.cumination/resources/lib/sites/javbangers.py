@@ -39,19 +39,35 @@ def Main():
     jbsortorder = utils.addon.getSetting('jbsortorder') if utils.addon.getSetting('jbsortorder') else 'last_content_date'
     sortname = list(sort_orders.keys())[list(sort_orders.values()).index(jbsortorder)]
 
-    context = (utils.addon_sys + "?mode=" + str('javbangers.PLContextMenu'))
-    contextmenu = [('[COLOR orange]Sort order[/COLOR]', 'RunPlugin(' + context + ')')]
+    context = f"{utils.addon_sys}?mode=javbangers.PLContextMenu"
+    contextmenu = [('[COLOR orange]Sort order[/COLOR]', f'RunPlugin({context})')]
 
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Playlists[/COLOR] [COLOR orange]{}[/COLOR]'.format(sortname), site.url + 'playlists/?mode=async&function=get_block&block_id=list_playlists_common_playlists_list&sort_by={}&from=01'.format(jbsortorder), 'Playlists', site.img_cat, contextm=contextmenu)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        f'[COLOR hotpink]Playlists[/COLOR] [COLOR orange]{sortname}[/COLOR]',
+        f'{site.url}playlists/?mode=async&function=get_block&block_id=list_playlists_common_playlists_list&sort_by={jbsortorder}&from=01',
+        'Playlists',
+        site.img_cat,
+        contextm=contextmenu,
+    )
     site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/{0}/', 'Search', site.img_search)
     if not jblogged:
         site.add_dir('[COLOR hotpink]Login[/COLOR]', '', 'JBLogin', '', Folder=False)
-    elif jblogged:
+    else:
         jbuser = utils.addon.getSetting('jbuser')
-        site.add_dir('[COLOR violet]JB Favorites[/COLOR]', site.url + 'my/favourites/videos/?mode=async&function=get_block&block_id=list_videos_my_favourite_videos&fav_type=0&playlist_id=0&sort_by=&from_my_fav_videos=01', 'List', site.img_cat)
+        site.add_dir(
+            '[COLOR violet]JB Favorites[/COLOR]',
+            f'{site.url}my/favourites/videos/?mode=async&function=get_block&block_id=list_videos_my_favourite_videos&fav_type=0&playlist_id=0&sort_by=&from_my_fav_videos=01',
+            'List',
+            site.img_cat,
+        )
         site.add_dir('[COLOR hotpink]Logout {0}[/COLOR]'.format(jbuser), '', 'JBLogin', '', Folder=False)
-    List(site.url + 'latest-updates/')
+    List(f'{site.url}latest-updates/')
     utils.eod()
 
 
@@ -61,12 +77,11 @@ def List(url):
     hdr['Cookie'] = get_cookies()
     listhtml = utils.getHtml(url, site.url, headers=hdr)
     if jblogged and ('>Log in<' in listhtml):
-        if JBLogin(False):
-            hdr['Cookie'] = get_cookies()
-            listhtml = utils.getHtml(url, site.url, headers=hdr)
-        else:
+        if not JBLogin(False):
             return None
 
+        hdr['Cookie'] = get_cookies()
+        listhtml = utils.getHtml(url, site.url, headers=hdr)
     match = re.compile(r'class="video-item([^"]+)".+?href="([^"]+)".+?title="([^"]+).+?(?:original|"cover"\s*src)="([^"]+)(.+?)clock\D+([\d:]+)', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for private, videopage, name, img, hd, name2 in match:
         hd = 'HD' if '>HD<' in hd else ''
@@ -79,58 +94,69 @@ def List(url):
             private = ""
         name = private + name
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                      + "?mode=" + str('javbangers.Lookupinfo')
-                      + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
+        contexturl = f"{utils.addon_sys}?mode=javbangers.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         if jblogged:
-            contextadd = (utils.addon_sys
-                          + "?mode=" + str('javbangers.ContextMenu')
-                          + "&url=" + urllib_parse.quote_plus(videopage)
-                          + "&fav=add")
-            contextdel = (utils.addon_sys
-                          + "?mode=" + str('javbangers.ContextMenu')
-                          + "&url=" + urllib_parse.quote_plus(videopage)
-                          + "&fav=del")
-            contextmenu.append(('[COLOR violet]Add to JB favorites[/COLOR]', 'RunPlugin(' + contextadd + ')'))
-            contextmenu.append(('[COLOR violet]Delete from JB favorites[/COLOR]', 'RunPlugin(' + contextdel + ')'))
-
+            contextadd = f"{utils.addon_sys}?mode=javbangers.ContextMenu&url={urllib_parse.quote_plus(videopage)}&fav=add"
+            contextdel = f"{utils.addon_sys}?mode=javbangers.ContextMenu&url={urllib_parse.quote_plus(videopage)}&fav=del"
+            contextmenu.extend(
+                (
+                    (
+                        '[COLOR violet]Add to JB favorites[/COLOR]',
+                        f'RunPlugin({contextadd})',
+                    ),
+                    (
+                        '[COLOR violet]Delete from JB favorites[/COLOR]',
+                        f'RunPlugin({contextdel})',
+                    ),
+                )
+            )
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu, duration=name2, quality=hd)
 
-    match = re.search(r'class="page-current"><span>(\d+)<.+?class="next">.+?data-block-id="([^"]+)"\s+data-parameters="([^"]+)">Next', listhtml, re.DOTALL | re.IGNORECASE)
-    if match:
-        npage = int(match.group(1)) + 1
-        block_id = match.group(2)
-        params = match.group(3).replace(';', '&').replace(':', '=')
+    if match := re.search(
+        r'class="page-current"><span>(\d+)<.+?class="next">.+?data-block-id="([^"]+)"\s+data-parameters="([^"]+)">Next',
+        listhtml,
+        re.DOTALL | re.IGNORECASE,
+    ):
+        npage = int(match[1]) + 1
+        block_id = match[2]
+        params = match[3].replace(';', '&').replace(':', '=')
         rnd = 1000000000000 + randint(0, 999999999999)
         nurl = url.split('?')[0] + '?mode=async&function=get_block&block_id={0}&{1}&_={2}'.format(block_id, params, str(rnd))
         lpnr, lastp = None, ''
-        match = re.search(r':(\d+)">Last', listhtml, re.DOTALL | re.IGNORECASE)
-        if match:
-            lpnr = match.group(1)
-            lastp = '/{}'.format(lpnr)
+        if match := re.search(
+            r':(\d+)">Last', listhtml, re.DOTALL | re.IGNORECASE
+        ):
+            lpnr = match[1]
+            lastp = f'/{lpnr}'
         nurl = nurl.replace('+from_albums', '')
-        nurl = re.sub(r'&from([^=]*)=\d+', r'&from\1={}'.format(npage), nurl)
+        nurl = re.sub(r'&from([^=]*)=\d+', f'&from\1={npage}', nurl)
 
-        cm_page = (utils.addon_sys + "?mode=javbangers.GotoPage" + "&url=" + urllib_parse.quote_plus(nurl) + "&np=" + str(npage) + "&lp=" + str(lpnr))
-        cm = [('[COLOR violet]Goto Page #[/COLOR]', 'RunPlugin(' + cm_page + ')')]
+        cm_page = f"{utils.addon_sys}?mode=javbangers.GotoPage&url={urllib_parse.quote_plus(nurl)}&np={str(npage)}&lp={str(lpnr)}"
+        cm = [('[COLOR violet]Goto Page #[/COLOR]', f'RunPlugin({cm_page})')]
 
-        site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (' + str(npage) + lastp + ')', nurl, 'List', site.img_next, contextm=cm)
+        site.add_dir(
+            f'[COLOR hotpink]Next Page...[/COLOR] ({str(npage)}{lastp})',
+            nurl,
+            'List',
+            site.img_next,
+            contextm=cm,
+        )
     utils.eod()
 
 
 @site.register()
 def GotoPage(url, np, lp=None):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
+    if pg := dialog.numeric(0, 'Enter Page number'):
         if int(lp) > 0 and int(pg) > int(lp):
             utils.notify(msg='Out of range!')
             return
-        url = re.sub(r'&from([^=]*)=\d+', r'&from\1={}'.format(pg), url, re.IGNORECASE)
-        contexturl = (utils.addon_sys + "?mode=" + "javbangers.List&url=" + urllib_parse.quote_plus(url))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+        url = re.sub(r'&from([^=]*)=\d+', f'&from\1={pg}', url, re.IGNORECASE)
+        contexturl = f"{utils.addon_sys}?mode=javbangers.List&url={urllib_parse.quote_plus(url)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
@@ -153,13 +179,13 @@ def Playvid(url, name, download=None):
         for surl, qual in items:
             qual = '00' if qual == 'preview' else qual
             surl = kvs_decode(surl, license)
-            sources.update({qual: surl})
+            sources[qual] = surl
     videourl = utils.selector('Select quality', sources, setting_valid='qualityask', sort_by=lambda x: 1081 if x == '4k' else int(x[:-1]), reverse=True)
 
     if not videourl:
         vp.progress.close()
         return
-    vp.play_from_direct_link(videourl + '|referer=' + url)
+    vp.play_from_direct_link(f'{videourl}|referer={url}')
 
 
 @site.register()
@@ -167,7 +193,7 @@ def Categories(url):
     cathtml = utils.getHtml(url, '')
     match = re.compile(r'"item"\s*href="([^"]+)"\s*title="([^"]+)">\n\s*<div.+?src="([^"]+).+?videos">([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, name2 in match:
-        name = utils.cleantext(name) + ' [COLOR cyan][{}][/COLOR]'.format(name2)
+        name = f'{utils.cleantext(name)} [COLOR cyan][{name2}][/COLOR]'
         site.add_dir(name, catpage, 'List', img, 1)
     xbmcplugin.addSortMethod(utils.addon_handle, xbmcplugin.SORT_METHOD_TITLE)
     utils.eod()
@@ -179,11 +205,11 @@ def Playlists(url, page=1):
     img = str(randint(1, 4))
     match = re.compile(r'class="item\s*".+?href="([^"]+)"\s*title="([^"]+)".+?class="thumb video' + img + '.+?data-original="([^"]+)".+?class="totalplaylist">([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, name2 in match:
-        name = utils.cleantext(name) + ' [COLOR cyan][{}][/COLOR]'.format(name2)
+        name = f'{utils.cleantext(name)} [COLOR cyan][{name2}][/COLOR]'
         site.add_dir(name, catpage, 'List', img)
     if re.search(r'<li\s*class="next"><a', cathtml, re.DOTALL | re.IGNORECASE):
         lastp = re.compile(r':(\d+)">Last', re.DOTALL | re.IGNORECASE).findall(cathtml)
-        lastp = '/{}'.format(lastp[0]) if lastp else ''
+        lastp = f'/{lastp[0]}' if lastp else ''
         if not page:
             page = 1
         npage = page + 1
@@ -192,7 +218,13 @@ def Playlists(url, page=1):
         else:
             utils.kodilog(' Playlists pagination error')
             nurl = url
-        site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (' + str(npage) + lastp + ')', nurl, 'Playlists', site.img_next, npage)
+        site.add_dir(
+            f'[COLOR hotpink]Next Page...[/COLOR] ({str(npage)}{lastp})',
+            nurl,
+            'Playlists',
+            site.img_next,
+            npage,
+        )
     utils.eod()
 
 
@@ -200,7 +232,7 @@ def Playlists(url, page=1):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl.format(title)
@@ -221,7 +253,6 @@ def JBLogin(logged=True):
             jbuser = getinput(default=jbuser, heading='Input your Javbangers username')
             jbpass = getinput(default=jbpass, heading='Input your Javbangers password', hidden=True)
 
-        loginurl = '{0}ajax-login/'.format(site.url)
         postRequest = {'action': 'login',
                        'email_link': '{0}email/'.format(site.url),
                        'format': 'json',
@@ -229,6 +260,7 @@ def JBLogin(logged=True):
                        'pass': jbpass,
                        'remember_me': '1',
                        'username': jbuser}
+        loginurl = '{0}ajax-login/'.format(site.url)
         response = utils._postHtml(loginurl, form_data=postRequest)
         if 'success' in response.lower():
             utils.addon.setSetting('jblogged', 'true')
@@ -240,14 +272,14 @@ def JBLogin(logged=True):
             utils.addon.setSetting('jbuser', '')
             utils.addon.setSetting('jbpass', '')
             success = False
-    elif jblogged:
-        clear = utils.selector('Clear stored user & password?', ['Yes', 'No'], reverse=True)
-        if clear:
-            if clear == 'Yes':
-                utils.addon.setSetting('jbuser', '')
-                utils.addon.setSetting('jbpass', '')
-            utils.addon.setSetting('jblogged', 'false')
-            utils._getHtml(site.url + 'logout/')
+    elif clear := utils.selector(
+        'Clear stored user & password?', ['Yes', 'No'], reverse=True
+    ):
+        if clear == 'Yes':
+            utils.addon.setSetting('jbuser', '')
+            utils.addon.setSetting('jbpass', '')
+        utils.addon.setSetting('jblogged', 'false')
+        utils._getHtml(f'{site.url}logout/')
     if logged:
         xbmc.executebuiltin('Container.Refresh')
     else:
@@ -257,8 +289,8 @@ def JBLogin(logged=True):
 @site.register()
 def ContextMenu(url, fav):
     id = url.split("/")[4]
-    fav_addurl = url + '?mode=async&format=json&action=add_to_favourites&video_id=' + id + '&album_id=&fav_type=0&playlist_id=0'
-    fav_delurl = url + '?mode=async&format=json&action=delete_from_favourites&video_id=' + id + '&album_id=&fav_type=0&playlist_id=0'
+    fav_addurl = f'{url}?mode=async&format=json&action=add_to_favourites&video_id={id}&album_id=&fav_type=0&playlist_id=0'
+    fav_delurl = f'{url}?mode=async&format=json&action=delete_from_favourites&video_id={id}&album_id=&fav_type=0&playlist_id=0'
     fav_url = fav_addurl if fav == 'add' else fav_delurl
 
     hdr = dict(utils.base_hdrs)
@@ -285,8 +317,7 @@ def ContextMenu(url, fav):
 @site.register()
 def PLContextMenu():
     sort_orders = {'Recently updated': 'last_content_date', 'Most viewed': 'playlist_viewed', 'Top rated': 'rating', 'Most commented': 'most_commented', 'Most videos': 'total_videos'}
-    order = utils.selector('Select order', sort_orders)
-    if order:
+    if order := utils.selector('Select order', sort_orders):
         utils.addon.setSetting('jbsortorder', order)
         xbmc.executebuiltin('Container.Refresh')
 
@@ -295,12 +326,13 @@ def get_cookies():
     domain = site.url.split('www')[-1][:-1]
     cookiestr = 'kt_tcookie=1'
     for cookie in utils.cj:
-        if cookie.domain == domain and cookie.name == 'PHPSESSID':
-            cookiestr += '; PHPSESSID=' + cookie.value
-        if cookie.domain == domain and cookie.name == 'kt_ips':
-            cookiestr += '; kt_ips=' + cookie.value
-        if cookie.domain == domain and cookie.name == 'kt_member':
-            cookiestr += '; kt_member=' + cookie.value
+        if cookie.domain == domain:
+            if cookie.name == 'PHPSESSID':
+                cookiestr += f'; PHPSESSID={cookie.value}'
+            elif cookie.name == 'kt_ips':
+                cookiestr += f'; kt_ips={cookie.value}'
+            elif cookie.name == 'kt_member':
+                cookiestr += f'; kt_member={cookie.value}'
     if jblogged and 'kt_member' not in cookiestr:
         JBLogin(False)
     return cookiestr

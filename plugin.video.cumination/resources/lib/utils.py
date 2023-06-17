@@ -73,7 +73,7 @@ handlers.append(urllib_request.HTTPSHandler(context=ssl_context))
 
 
 def kodilog(logvar, level=LOGINFO):
-    xbmc.log("@@@@Cumination: " + str(logvar), level)
+    xbmc.log(f"@@@@Cumination: {str(logvar)}", level)
 
 
 @url_dispatcher.register()
@@ -99,7 +99,7 @@ def i18n(string_id):
     try:
         return six.ensure_str(addon.getLocalizedString(strings.STRINGS[string_id]))
     except Exception as e:
-        kodilog('Failed String Lookup: %s (%s)' % (string_id, e))
+        kodilog(f'Failed String Lookup: {string_id} ({e})')
         return string_id
 
 
@@ -110,10 +110,8 @@ if cj is not None:
         except:
             try:
                 xbmcvfs.delete(TRANSLATEPATH(cookiePath))
-                pass
             except:
                 dialog.ok(i18n('oh_oh'), i18n('cookie_lock'))
-                pass
     cookie_handler = urllib_request.HTTPCookieProcessor(cj)
     handlers += [cookie_handler]
 
@@ -141,11 +139,8 @@ def downloadVideo(url, name):
             percent = min(int((downloaded * 100) / filesize), 100)
             currently_downloaded = float(downloaded) / (1024 * 1024)
             kbps_speed = int(downloaded / (time.perf_counter() if PY3 else time.clock() - start))
-            if kbps_speed > 0:
-                eta = (filesize - downloaded) / kbps_speed
-            else:
-                eta = 0
-            kbps_speed = kbps_speed / 1024
+            eta = (filesize - downloaded) / kbps_speed if kbps_speed > 0 else 0
+            kbps_speed /= 1024
             total = float(filesize) / (1024 * 1024)
             mbs = '%.02f MB of %.02f MB' % (currently_downloaded, total)
             e = 'Speed: %.02f Kb/s ' % kbps_speed
@@ -178,7 +173,7 @@ def downloadVideo(url, name):
             headers = dict(urllib_parse.parse_qsl(uheaders))
 
         if 'User-Agent' not in list(headers.keys()):
-            headers.update({'User-Agent': USER_AGENT})
+            headers['User-Agent'] = USER_AGENT
 
         resp = getResponse(url, headers, 0)
 
@@ -287,9 +282,6 @@ def downloadVideo(url, name):
                     chunks = []
                     # create new response
                     resp = getResponse(url, headers, total)
-                else:
-                    # use existing response
-                    pass
 
     def clean_filename(s):
         if not s:
@@ -401,16 +393,13 @@ def inputstream_check(url, listitem):
                          [".mpd", 'application/dash+xml'],
                          [".ism", 'application/vnd.ms-sstr+xml']]
 
-    m3u8_use_ia = True if addon.getSetting("m3u8_use_ia") == "true" else False
+    m3u8_use_ia = addon.getSetting("m3u8_use_ia") == "true"
     if m3u8_use_ia:
         supported_endings.append([".m3u8", 'application/x-mpegURL'])
     adaptive_type = None
     for ending in supported_endings:
         if ending[0] in url:
-            if ending[0] == ".m3u8":
-                adaptive_type = "hls"
-            else:
-                adaptive_type = ending[0][1:]
+            adaptive_type = "hls" if ending[0] == ".m3u8" else ending[0][1:]
             mime_type = ending[1]
 
     if adaptive_type:
@@ -513,7 +502,7 @@ def _getHtml(url, referer='', headers=None, NoCookie=None, data=None, error='ret
                             else:
                                 raise
             elif 400 < e.code < 500:
-                if not e.code == 403:
+                if e.code != 403:
                     notify(i18n('oh_oh'), i18n('not_exist'))
                 raise
             else:
@@ -529,12 +518,9 @@ def _getHtml(url, referer='', headers=None, NoCookie=None, data=None, error='ret
     except Exception as e:
         if 'SSL23_GET_SERVER_HELLO' in str(e):
             notify(i18n('oh_oh'), i18n('python_old'))
-            raise
         else:
             notify(i18n('oh_oh'), i18n('site_down'))
-            raise
-        return None
-
+        raise
     cencoding = response.info().get('Content-Encoding', '')
     if cencoding.lower() == 'gzip':
         buf = six.BytesIO(response.read())
@@ -555,15 +541,13 @@ def _getHtml(url, referer='', headers=None, NoCookie=None, data=None, error='ret
     if encoding is None:
         epattern = r'<meta\s+http-equiv="Content-Type"\s+content="(?:.+?);\s+charset=(.+?)"'
         epattern = epattern.encode('utf8') if PY3 else epattern
-        r = re.search(epattern, result, re.IGNORECASE)
-        if r:
-            encoding = r.group(1).decode('utf8') if PY3 else r.group(1)
+        if r := re.search(epattern, result, re.IGNORECASE):
+            encoding = r[1].decode('utf8') if PY3 else r[1]
         else:
             epattern = r'''<meta\s+charset=["']?([^"'>]+)'''
             epattern = epattern.encode('utf8') if PY3 else epattern
-            r = re.search(epattern, result, re.IGNORECASE)
-            if r:
-                encoding = r.group(1).decode('utf8') if PY3 else r.group(1)
+            if r := re.search(epattern, result, re.IGNORECASE):
+                encoding = r[1].decode('utf8') if PY3 else r[1]
 
     if encoding is not None:
         result = result.decode(encoding.lower(), errors='ignore')
@@ -603,10 +587,10 @@ def get_sucuri_cookie(html):
         cookie = eval(c)
     else:
         exec(s)
-    if sucuri_cookie == '':
+    if not sucuri_cookie:
         sucuri_cookie = cookie
     sucuri_cookie = re.compile('([^=]+)=(.*)').findall(sucuri_cookie)[0]
-    sucuri_cookie = '%s=%s' % (sucuri_cookie[0], sucuri_cookie[1])
+    sucuri_cookie = f'{sucuri_cookie[0]}={sucuri_cookie[1]}'
     return sucuri_cookie
 
 
@@ -673,7 +657,7 @@ def _postHtml(url, form_data={}, headers={}, json_data={}, compression=True, NoC
                         notify(i18n('oh_oh'), i18n('site_down'))
                         raise
         elif 400 < e.code < 500:
-            if not e.code == 403:
+            if e.code != 403:
                 notify(i18n('oh_oh'), i18n('not_exist'))
             raise
         else:
@@ -709,9 +693,8 @@ def _postHtml(url, form_data={}, headers={}, json_data={}, compression=True, NoC
     if encoding is None:
         epattern = r'<meta\s+http-equiv="Content-Type"\s+content="(?:.+?);\s+charset=(.+?)"'
         epattern = epattern.encode('utf8') if PY3 else epattern
-        r = re.search(epattern, data, re.IGNORECASE)
-        if r:
-            encoding = r.group(1).decode('utf8') if PY3 else r.group(1)
+        if r := re.search(epattern, data, re.IGNORECASE):
+            encoding = r[1].decode('utf8') if PY3 else r[1]
 
     if encoding is not None:
         data = data.decode(encoding.lower(), errors='ignore')
@@ -833,8 +816,7 @@ def cleantext(text):
 
 def cleanhtml(raw_html):
     cleanr = re.compile('<.*?>')
-    cleantext = re.sub(cleanr, '', raw_html)
-    return cleantext
+    return re.sub(cleanr, '', raw_html)
 
 
 def get_vidhost(url):
@@ -843,8 +825,7 @@ def get_vidhost(url):
     :return vidhost
     """
     parts = url.split('/')[2].split('.')
-    vidhost = '{}.{}'.format(parts[-2], parts[-1])
-    return vidhost
+    return f'{parts[-2]}.{parts[-1]}'
 
 
 def get_language(lang_code):
@@ -930,9 +911,8 @@ def streamdefence(html):
             match = re.findall(r'\("([^"]+)', decoded, re.DOTALL | re.IGNORECASE)[0]
             decoded = base64.b64decode(match.encode('ascii'))
             decoded = base64.b64decode(decoded).decode('ascii')
-        match = re.search(r'var\s[^"=]+="([^"]+)', decoded)
-        if match:
-            decoded = base64.b64decode(match.group(1).encode('ascii')).decode('ascii')
+        if match := re.search(r'var\s[^"=]+="([^"]+)', decoded):
+            decoded = base64.b64decode(match[1].encode('ascii')).decode('ascii')
             return decoded
     return html
 
@@ -961,7 +941,7 @@ def oneSearch(url, page, channel):
         + "&mode=" + str(channel)
         + "&keyword=" + keyword
     )
-    xbmc.executebuiltin('Container.Update(' + searchcmd + ')')
+    xbmc.executebuiltin(f'Container.Update({searchcmd})')
 
 
 @url_dispatcher.register()
@@ -989,7 +969,7 @@ def alphabeticalSearch(url, channel, keyword=None):
     else:
         key_list = keys()
         for c, count in sorted(key_list.items()):
-            name = '[COLOR deeppink]{}[/COLOR] [COLOR lightpink]({})[/COLOR]'.format(c, count)
+            name = f'[COLOR deeppink]{c}[/COLOR] [COLOR lightpink]({count})[/COLOR]'
             addDir(name, url, "utils.alphabeticalSearch", cum_image('cum-search.png'), '', channel, keyword=c)
         eod()
 
@@ -1013,15 +993,19 @@ def updateKeyword(keyword, new_keyword):
     conn = sqlite3.connect(favoritesdb)
     conn.text_factory = str
     c = conn.cursor()
-    c.execute("UPDATE keywords SET keyword='{}' WHERE keyword='{}'".format(urllib_parse.quote_plus(new_keyword), urllib_parse.quote_plus(keyword)))
+    c.execute(
+        f"UPDATE keywords SET keyword='{urllib_parse.quote_plus(new_keyword)}' WHERE keyword='{urllib_parse.quote_plus(keyword)}'"
+    )
     conn.commit()
     conn.close()
 
 
 @url_dispatcher.register()
 def delallKeyword():
-    yes = dialog.yesno(i18n('warning'), '{0}[CR]{1}?'.format(i18n('clear_kwds'), i18n('continue')))  # , nolabel='No', yeslabel='Yes')
-    if yes:
+    if yes := dialog.yesno(
+        i18n('warning'),
+        '{0}[CR]{1}?'.format(i18n('clear_kwds'), i18n('continue')),
+    ):
         conn = sqlite3.connect(favoritesdb)
         c = conn.cursor()
         c.execute("DELETE FROM keywords;")
@@ -1064,33 +1048,21 @@ def backup_keywords():
         progress.close()
         return
     progress.update(75, i18n('write_bkup'))
-    filename = "cumination-keywords_" + time + '.bak'
-    compressbackup = True if addon.getSetting("compressbackup") == "true" else False
+    filename = f"cumination-keywords_{time}.bak"
+    compressbackup = addon.getSetting("compressbackup") == "true"
     if compressbackup:
         import gzip
-        try:
-            if PY3:
-                with gzip.open(path + filename, "wt", encoding="utf-8") as fav_file:
-                    json.dump(backup_content, fav_file)
-            else:
-                with gzip.open(path + filename, "wb") as fav_file:
-                    json.dump(backup_content, fav_file)
-        except IOError:
-            progress.close()
-            notify(i18n('invalid_path'), i18n('write_permission'))
-            return
-    else:
-        try:
-            if PY3:
-                with gzip.open(path + filename, "wt", encoding="utf-8") as fav_file:
-                    json.dump(backup_content, fav_file)
-            else:
-                with gzip.open(path + filename, "wb") as fav_file:
-                    json.dump(backup_content, fav_file)
-        except IOError:
-            progress.close()
-            notify(i18n('invalid_path'), i18n('write_permission'))
-            return
+    try:
+        if PY3:
+            with gzip.open(path + filename, "wt", encoding="utf-8") as fav_file:
+                json.dump(backup_content, fav_file)
+        else:
+            with gzip.open(path + filename, "wb") as fav_file:
+                json.dump(backup_content, fav_file)
+    except IOError:
+        progress.close()
+        notify(i18n('invalid_path'), i18n('write_permission'))
+        return
     progress.close()
     dialog.ok(i18n('bkup_complete'), "{0} {1}".format(i18n('bkup_file'), path + filename))
 
@@ -1102,9 +1074,7 @@ def check_if_keyword_exists(keyword):
     c.execute("SELECT * FROM keywords WHERE keyword = ?", (urllib_parse.quote_plus(keyword),))
     row = c.fetchone()
     conn.close()
-    if row:
-        return True
-    return False
+    return bool(row)
 
 
 @url_dispatcher.register()
@@ -1113,38 +1083,26 @@ def restore_keywords():
     if not path:
         return
     import json
-    compressbackup = True if addon.getSetting("compressbackup") == "true" else False
+    compressbackup = addon.getSetting("compressbackup") == "true"
     if compressbackup:
         import gzip
-        try:
-            if PY3:
-                with gzip.open(path, "rt", encoding="utf-8") as fav_file:
-                    backup_content = json.load(fav_file)
-            else:
-                with gzip.open(path, "rb") as fav_file:
-                    backup_content = json.load(fav_file)
+    try:
+        if PY3:
+            with gzip.open(path, "rt", encoding="utf-8") as fav_file:
+                backup_content = json.load(fav_file)
+        else:
+            with gzip.open(path, "rb") as fav_file:
+                backup_content = json.load(fav_file)
 
-        except (ValueError, IOError):
-            notify(i18n('error'), i18n('invalid_bkup'))
-            return
-        if not backup_content["meta"]["type"] in ("cumination-keywords", "uwc-keywords"):
-            notify(i18n('error'), i18n('invalid_bkup'))
-            return
-    else:
-        try:
-            if PY3:
-                with gzip.open(path, "rt", encoding="utf-8") as fav_file:
-                    backup_content = json.load(fav_file)
-            else:
-                with gzip.open(path, "rb") as fav_file:
-                    backup_content = json.load(fav_file)
-
-        except (ValueError, IOError):
-            notify(i18n('error'), i18n('invalid_bkup'))
-            return
-        if not backup_content["meta"]["type"] in ("cumination-keywords", "uwc-keywords"):
-            notify(i18n('error'), i18n('invalid_bkup'))
-            return
+    except (ValueError, IOError):
+        notify(i18n('error'), i18n('invalid_bkup'))
+        return
+    if backup_content["meta"]["type"] not in (
+        "cumination-keywords",
+        "uwc-keywords",
+    ):
+        notify(i18n('error'), i18n('invalid_bkup'))
+        return
     keywords = backup_content["data"]
     if not keywords:
         notify(i18n('error'), i18n('empty_bkup'))
@@ -1234,20 +1192,19 @@ def prefquality(video_list, sort_by=None, reverse=False):
 
     vidurl = None
     if isinstance(video_list, dict):
-        qualities = [2160, 1080, 720, 576]
-        quality = qualities[maxquality]
         for key in video_list.copy():
             if key.lower().endswith('p60'):
                 video_list[key.replace('p60', '')] = video_list[key]
                 video_list.pop(key)
-            else:
-                if key.lower() == '4k':
-                    video_list['2160'] = video_list[key]
-                    video_list.pop(key)
+            elif key.lower() == '4k':
+                video_list['2160'] = video_list[key]
+                video_list.pop(key)
 
         video_list = [(int(''.join([y for y in key if y.isdigit()])), value) for key, value in list(video_list.items())]
         video_list = sorted(video_list, reverse=True)
 
+        qualities = [2160, 1080, 720, 576]
+        quality = qualities[maxquality]
         for video in video_list:
             if quality >= video[0]:
                 vidurl = video[1]
@@ -1258,12 +1215,11 @@ def prefquality(video_list, sort_by=None, reverse=False):
                     break
         if not vidurl:
             vidurl = video_list[-1][1]
-    else:
-        keys = sorted(video_list, key=sort_by, reverse=reverse)
-        if not keys:
-            return None
+    elif keys := sorted(video_list, key=sort_by, reverse=reverse):
         vidurl = keys[0]
 
+    else:
+        return None
     return vidurl
 
 
@@ -1344,7 +1300,7 @@ class VideoPlayer():
 
     @_cancellable
     def play_from_link_list(self, links):
-        use_universal = True if addon.getSetting("universal_resolvers") == "true" else False
+        use_universal = addon.getSetting("universal_resolvers") == "true"
         sources = self._clean_urls([self.resolveurl.HostedMediaFile(x, title=x.split('/')[2], include_universal=use_universal) for x in links])
         if not sources:
             notify(i18n('oh_oh'), i18n('not_found'))
@@ -1353,7 +1309,7 @@ class VideoPlayer():
 
     @_cancellable
     def _select_source(self, sources):
-        if not len(sources) > 1 or addon.getSetting("dontask") == "true":
+        if len(sources) <= 1 or addon.getSetting("dontask") == "true":
             source = sources[0]
         else:
             source = self.resolveurl.choose_source(sources)
@@ -1408,30 +1364,34 @@ class VideoPlayer():
         sdpages = ''
         for sd_url in sdurls:
             if not world:
-                sdurl = 'http://www.streamdefence.com/view.php?ref=' + sd_url
+                sdurl = f'http://www.streamdefence.com/view.php?ref={sd_url}'
             else:
-                sdurl = 'https://www.strdef.world/' + sd_url
+                sdurl = f'https://www.strdef.world/{sd_url}'
             sdsrc = getHtml(sdurl, url if url else sdurl)
             sdpage = streamdefence(sdsrc)
             sdpages += sdpage
-        sources = set(re.compile(r'<iframe.+?src="([^"]+)', re.DOTALL | re.IGNORECASE).findall(sdpages))
-        return sources
+        return set(
+            re.compile(
+                r'<iframe.+?src="([^"]+)', re.DOTALL | re.IGNORECASE
+            ).findall(sdpages)
+        )
 
     @_cancellable
     def _solve_filecrypt(self, fc_urls, url):
         self.progress.update(55, "[CR]{0}[CR]".format(i18n('load_fcrypt')))
         sites = set()
         for fc_url in fc_urls:
-            fcurl = 'http://filecrypt.cc/Container/' + fc_url + ".html"
+            fcurl = f'http://filecrypt.cc/Container/{fc_url}.html'
             fcsrc = getHtml(fcurl, url if url else fcurl, base_hdrs)
             fcmatch = re.compile(r"openLink.?'([\w\-]*)',", re.DOTALL | re.IGNORECASE).findall(fcsrc)
             for fclink in fcmatch:
-                fcpage = "http://filecrypt.cc/Link/" + fclink + ".html"
+                fcpage = f"http://filecrypt.cc/Link/{fclink}.html"
                 fcpagesrc = getHtml(fcpage, fcurl)
-                fclink2 = re.search('''top.location.href='([^']+)''', fcpagesrc)
-                if fclink2:
+                if fclink2 := re.search(
+                    '''top.location.href='([^']+)''', fcpagesrc
+                ):
                     try:
-                        fcurl2 = getVideoLink(fclink2.group(1), fcpage)
+                        fcurl2 = getVideoLink(fclink2[1], fcpage)
                         sites.add(fcurl2)
                     except:
                         pass
@@ -1442,7 +1402,7 @@ class VideoPlayer():
         self.progress.update(55, "[CR]{0}[CR]".format(i18n('load_shortix')))
         sources = set()
         for shortix in shortixurls:
-            shortixurl = 'https://1155xmv.com/?u=' + shortix
+            shortixurl = f'https://1155xmv.com/?u={shortix}'
             shortixsrc = getHtml(shortixurl, url if url else shortixurl)
             sources.add(re.compile('src="([^"]+)"', re.DOTALL | re.IGNORECASE).findall(shortixsrc)[0])
         return sources

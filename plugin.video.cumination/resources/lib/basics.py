@@ -18,7 +18,7 @@ TRANSLATEPATH = xbmcvfs.translatePath if six.PY3 else xbmc.translatePath
 
 rootDir = addon.getAddonInfo('path')
 if rootDir[-1] == ';':
-    rootDir = rootDir[0:-1]
+    rootDir = rootDir[:-1]
 rootDir = TRANSLATEPATH(rootDir)
 resDir = os.path.join(rootDir, 'resources')
 imgDir = os.path.join(resDir, 'images')
@@ -55,8 +55,7 @@ def cum_image(filename, custom=False):
     if filename.startswith('http'):
         return filename
     else:
-        img = os.path.join(customSitesDir if custom else imgDir, filename)
-        return img
+        return os.path.join(customSitesDir if custom else imgDir, filename)
 
 
 def eod(handle=addon_handle, cache=True):
@@ -68,21 +67,19 @@ def eod(handle=addon_handle, cache=True):
             currentskin, viewno = setview.split(';')
             if currentskin == skin:
                 viewtype = viewno
-        xbmc.executebuiltin("Container.SetViewMode(%s)" % str(viewtype))
+        xbmc.executebuiltin(f"Container.SetViewMode({str(viewtype)})")
     xbmcplugin.endOfDirectory(handle, cacheToDisc=cache)
 
 
 def addImgLink(name, url, mode):
-    u = (sys.argv[0]
-         + "?url=" + urllib_parse.quote_plus(url)
-         + "&mode=" + str(mode)
-         + "&name=" + urllib_parse.quote_plus(name))
+    u = f"{sys.argv[0]}?url={urllib_parse.quote_plus(url)}&mode={str(mode)}&name={urllib_parse.quote_plus(name)}"
     liz = xbmcgui.ListItem(name)
     if KODIVER < 19.8:
         liz.setInfo(type='pictures', infoLabels={'title': name})
     liz.setArt({'thumb': url, 'icon': url, 'poster': url})
-    ok = xbmcplugin.addDirectoryItem(handle=addon_handle, url=u, listitem=liz, isFolder=False)
-    return ok
+    return xbmcplugin.addDirectoryItem(
+        handle=addon_handle, url=u, listitem=liz, isFolder=False
+    )
 
 
 def addDownLink(name, url, mode, iconimage, desc='', stream=None, fav='add', noDownload=False, contextm=None, fanart=None, duration='', quality=''):

@@ -27,10 +27,10 @@ site = AdultSite('amateurtv', '[COLOR hotpink]Amatuer TV[/COLOR]', 'https://www.
 
 @site.register(default_mode=True)
 def Main():
-    female = True if utils.addon.getSetting("chatfemale") == "true" else False
-    male = True if utils.addon.getSetting("chatmale") == "true" else False
-    couple = True if utils.addon.getSetting("chatcouple") == "true" else False
-    trans = True if utils.addon.getSetting("chattrans") == "true" else False
+    female = utils.addon.getSetting("chatfemale") == "true"
+    male = utils.addon.getSetting("chatmale") == "true"
+    couple = utils.addon.getSetting("chatcouple") == "true"
+    trans = utils.addon.getSetting("chattrans") == "true"
     site.add_dir('[COLOR red]Refresh Amatuer TV images[/COLOR]', '', 'clean_database', '', Folder=False)
     if female:
         site.add_dir('[COLOR hotpink]Females[/COLOR]', 'w', 'List', '', 1)
@@ -50,9 +50,9 @@ def clean_database(showdialog=True):
         with conn:
             list = conn.execute("SELECT id, cachedurl FROM texture WHERE url LIKE '%%%s%%';" % ".amateur.tv")
             for row in list:
-                conn.execute("DELETE FROM sizes WHERE idtexture LIKE '%s';" % row[0])
+                conn.execute(f"DELETE FROM sizes WHERE idtexture LIKE '{row[0]}';")
                 try:
-                    os.remove(utils.TRANSLATEPATH("special://thumbnails/" + row[1]))
+                    os.remove(utils.TRANSLATEPATH(f"special://thumbnails/{row[1]}"))
                 except:
                     pass
             conn.execute("DELETE FROM texture WHERE url LIKE '%%%s%%';" % ".amateur.tv")
@@ -73,8 +73,7 @@ def List(url, page=1):
         if cam.get('online'):
             model = cam.get('user')
             name = model.get('username')
-            age = model.get('age')
-            if age:
+            if age := model.get('age'):
                 name = '{0} [COLOR deeppink][{1}][/COLOR]'.format(name, age[0])
             hd = ''
             if cam.get('hd'):
@@ -110,11 +109,9 @@ def Playvid(url, name):
     vp.progress.update(25, "[CR]Loading video page[CR]")
     url = '{0}v3/readmodel/show/{1}/en'.format(site.url, url)
     listhtml = utils._getHtml(url, site.url)
-    vurls = json.loads(listhtml).get('videoTechnologies')
-    if vurls:
-        vurl = vurls.get('fmp4-hls')
-        if vurl:
-            vp.play_from_direct_link(vurl + '|User-Agent=iPad')
+    if vurls := json.loads(listhtml).get('videoTechnologies'):
+        if vurl := vurls.get('fmp4-hls'):
+            vp.play_from_direct_link(f'{vurl}|User-Agent=iPad')
             return
 
     utils.notify('Oh Oh', 'No Video found')

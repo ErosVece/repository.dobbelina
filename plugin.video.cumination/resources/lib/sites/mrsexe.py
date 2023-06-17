@@ -28,10 +28,23 @@ progress = utils.progress
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Classiques[/COLOR]', site.url + 'classiques/', 'List', '', '')
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?search=', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Classiques[/COLOR]',
+        f'{site.url}classiques/',
+        'List',
+        '',
+        '',
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?search=',
+        'Search',
+        site.img_search,
+    )
     site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url, 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Stars[/COLOR]', site.url + 'filles/', 'Stars', '', '')
+    site.add_dir(
+        '[COLOR hotpink]Stars[/COLOR]', f'{site.url}filles/', 'Stars', '', ''
+    )
     List(site.url)
     utils.eod()
 
@@ -45,13 +58,14 @@ def List(url):
     items = re.compile(r'<li\s*class="(\s*hd|)".+?href="([^"]+).+?src="([^"]+).+?tion">[^\d]+([^<]+).+?>([^<]+)', re.DOTALL | re.IGNORECASE).findall(match[0])
     for qual, videopage, img, duration, name in items:
         if img.startswith('//'):
-            img = 'http:' + img
+            img = f'http:{img}'
         name = utils.cleantext(name.strip())
         site.add_download_link(name, site.url[:-1] + videopage, 'Playvid', img, name, duration=duration, quality=qual)
 
-    nextp = re.compile(r'<li\s*class="arrow"><a\s*href="(.+?)">suivant').search(match[0])
-    if nextp:
-        site.add_dir('Next Page', site.url[:-1] + nextp.group(1), 'List', site.img_next)
+    if nextp := re.compile(
+        r'<li\s*class="arrow"><a\s*href="(.+?)">suivant'
+    ).search(match[0]):
+        site.add_dir('Next Page', site.url[:-1] + nextp[1], 'List', site.img_next)
 
     utils.eod()
 
@@ -60,7 +74,7 @@ def List(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title
@@ -83,12 +97,13 @@ def Stars(url):
     items = re.compile(r'nail">.+?src="([^"]+).+?href="([^"]+)">([^<]+).+?\s([^<]+)', re.DOTALL | re.IGNORECASE).findall(match)
     for img, starpage, name, vidcount in items:
         if img.startswith('//'):
-            img = 'http:' + img
+            img = f'http:{img}'
         name = "{0}[COLOR orange] [COLOR deeppink][I]({1})[/I][/COLOR]".format(utils.cleantext(name), vidcount.strip())
         site.add_dir(name, site.url[:-1] + starpage, 'List', img)
-    nextp = re.compile(r'<li\s*class="arrow"><a\s*href="(.+?)">suivant').search(starhtml)
-    if nextp:
-        site.add_dir('Next Page', site.url[:-1] + nextp.group(1), 'Stars', site.img_next)
+    if nextp := re.compile(
+        r'<li\s*class="arrow"><a\s*href="(.+?)">suivant'
+    ).search(starhtml):
+        site.add_dir('Next Page', site.url[:-1] + nextp[1], 'Stars', site.img_next)
     utils.eod()
 
 
@@ -97,8 +112,9 @@ def Playvid(url, name, download=None):
     html = utils.getHtml(url, site.url)
     videourl = re.compile(r"src='(/inc/clic\.php\?video=.+?&cat=mrsex.+?)'").findall(html)
     html = utils.getHtml(site.url[:-1] + videourl[0], site.url)
-    videourl = re.compile("""['"]([^'"]*mp4)['"]""", re.DOTALL).findall(html)
-    if videourl:
+    if videourl := re.compile("""['"]([^'"]*mp4)['"]""", re.DOTALL).findall(
+        html
+    ):
         utils.playvid(videourl[-1], name, download)
     else:
         return

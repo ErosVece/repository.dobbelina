@@ -32,8 +32,7 @@ def SetPin():
     if selected == -1:
         return
     elif selected == 0:
-        pincode = AskPin()
-        if pincode:
+        if pincode := AskPin():
             addon.setSetting('pincode', pincode)
             addon.setSetting('logintime', '')
     elif selected == 1:
@@ -43,8 +42,9 @@ def SetPin():
 
 
 def AskPin():
-    pincode = dialog.input(i18n('enter_pin'), option=xbmcgui.ALPHANUM_HIDE_INPUT)
-    if pincode:
+    if pincode := dialog.input(
+        i18n('enter_pin'), option=xbmcgui.ALPHANUM_HIDE_INPUT
+    ):
         return HashPin(pincode)
     return False
 
@@ -61,17 +61,24 @@ def CheckPin():
     if not logintime:
         logintime = 0
     timecheck = now - (60 * 60)
-    if not float(logintime) < timecheck:
+    if float(logintime) >= timecheck:
         return True
     if hashedpin:
         pinhash = AskPin()
-        if pinhash == hashedpin:
-            addon.setSetting('logintime', str(now))
-            return True
-        else:
-            retry = dialog.yesno(i18n('pin_incorrect'), '{0}[CR]{1}?'.format(i18n('incorrect_msg'), i18n('retry')), yeslabel=i18n('retry'))
-            if retry:
-                return CheckPin()
-            else:
-                return False
+        if pinhash != hashedpin:
+            return (
+                CheckPin()
+                if (
+                    retry := dialog.yesno(
+                        i18n('pin_incorrect'),
+                        '{0}[CR]{1}?'.format(
+                            i18n('incorrect_msg'), i18n('retry')
+                        ),
+                        yeslabel=i18n('retry'),
+                    )
+                )
+                else False
+            )
+        addon.setSetting('logintime', str(now))
+        return True
     return True

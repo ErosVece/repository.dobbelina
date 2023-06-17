@@ -25,9 +25,25 @@ site = AdultSite('hentaihavenc', '[COLOR hotpink]Hentaihaven[/COLOR]', 'https://
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'genres/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Series[/COLOR]', site.url + 'series/', 'Series', site.img_cat, section='Home')
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s=', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}genres/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Series[/COLOR]',
+        f'{site.url}series/',
+        'Series',
+        site.img_cat,
+        section='Home',
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?s=',
+        'Search',
+        site.img_search,
+    )
     List(site.url)
     utils.eod()
 
@@ -40,9 +56,15 @@ def List(url):
         name = utils.cleantext(name)
         site.add_download_link(name, videopage, 'Playvid', img, name)
 
-    page = re.compile(r'<a\s*href="([^"]+/(\d+)/)">Next<', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if page:
-        site.add_dir('[COLOR hotpink]Next Page[/COLOR] ({0})'.format(page.group(2)), page.group(1), 'List', site.img_next)
+    if page := re.compile(
+        r'<a\s*href="([^"]+/(\d+)/)">Next<', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        site.add_dir(
+            '[COLOR hotpink]Next Page[/COLOR] ({0})'.format(page[2]),
+            page[1],
+            'List',
+            site.img_next,
+        )
 
     utils.eod()
 
@@ -52,16 +74,17 @@ def Playvid(url, name, download=None):
     vp = utils.VideoPlayer(name, download)
     vp.progress.update(25, "[CR]Loading video page[CR]")
     videopage = utils.getHtml(url, site.url)
-    surl = re.compile(r'<iframe.+?src="([^"]*)', re.DOTALL | re.IGNORECASE).search(videopage)
-    if surl:
-        surl = surl.group(1)
+    if surl := re.compile(
+        r'<iframe.+?src="([^"]*)', re.DOTALL | re.IGNORECASE
+    ).search(videopage):
+        surl = surl[1]
         if 'nhplayer.com' in surl:
             videopage = utils.getHtml(surl, site.url)
             surl = re.compile(r'<li data-id="([^"]+)').search(videopage)
             if surl:
-                surl = surl.group(1)
+                surl = surl[1]
                 if surl.startswith('/'):
-                    surl = 'https://nhplayer.com' + surl
+                    surl = f'https://nhplayer.com{surl}'
                     videohtml = utils.getHtml(surl, site.url)
                     vp.direct_regex = r'file:\s*"([^"]+)"'
                     vp.play_from_html(videohtml)
@@ -108,7 +131,7 @@ def Series(url, section):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title

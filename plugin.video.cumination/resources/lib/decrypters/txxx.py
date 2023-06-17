@@ -16,13 +16,13 @@ def Tdecode(vidurl):
 
 def GetTxxxVideo(vidpage):
     vidpagecontent = utils.getHtml(vidpage)
-    posturl = 'https://%s/sn4diyux.php' % vidpage.split('/')[2]
+    posturl = f"https://{vidpage.split('/')[2]}/sn4diyux.php"
 
-    pC3 = re.search('''pC3:'([^']+)''', vidpagecontent).group(1)
-    vidid = re.search(r'''video_id["|']?:\s*(\d+)''', vidpagecontent).group(1)
-    data = '%s,%s' % (vidid, pC3)
+    pC3 = re.search('''pC3:'([^']+)''', vidpagecontent)[1]
+    vidid = re.search(r'''video_id["|']?:\s*(\d+)''', vidpagecontent)[1]
+    data = f'{vidid},{pC3}'
     vidcontent = utils.getHtml(posturl, referer=vidpage, data={'param': data})
-    vidurl = re.search('video_url":"([^"]+)', vidcontent).group(1)
+    vidurl = re.search('video_url":"([^"]+)', vidcontent)[1]
     vidurl = Tdecode(vidurl)
 
-    return vidurl + "|Referer=" + vidpage
+    return f"{vidurl}|Referer={vidpage}"

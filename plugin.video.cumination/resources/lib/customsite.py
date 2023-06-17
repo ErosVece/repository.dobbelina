@@ -8,7 +8,7 @@ class CustomSite(AdultSite):
     def __init__(self, author, name, webcam=False):
         self.default_mode = ''
         self.custom_name = name
-        self.name = 'custom_' + name + '_by_' + author
+        self.name = f'custom_{name}_by_{author}'
         self.custom = True
         self.author = author
         self.webcam = webcam
@@ -31,7 +31,11 @@ class CustomSite(AdultSite):
     @property
     def title(self):
         self.load_stored_data_if_needed()
-        return self.db_title + '[COLOR white] - webcams[/COLOR]' if self.webcam else self.db_title
+        return (
+            f'{self.db_title}[COLOR white] - webcams[/COLOR]'
+            if self.webcam
+            else self.db_title
+        )
 
     @property
     def image(self):

@@ -26,9 +26,14 @@ site = AdultSite("mrskin", "[COLOR hotpink]Mr Skin[/COLOR]", "https://www.mrskin
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Playlists[/COLOR]', site.url + 'playlist', 'List', site.img_cat)
+    site.add_dir(
+        '[COLOR hotpink]Playlists[/COLOR]',
+        f'{site.url}playlist',
+        'List',
+        site.img_cat,
+    )
     # ListScenes(site.url + 'search/clips?sort=most_recent')
-    List(site.url + 'video')
+    List(f'{site.url}video')
 
     utils.eod()
 
@@ -44,9 +49,10 @@ def List(url):
             site.add_download_link(name, videopage, 'PlayPL', img, name, noDownload=True)
         else:
             site.add_download_link(name, videopage, 'Playvid', img, name, noDownload=True)
-    nextp = re.search(r'''class='next'>\s*<a\s*href="([^"]+)">Next''', listhtml, re.DOTALL)
-    if nextp:
-        nextp = site.url[:-1] + nextp.group(1)
+    if nextp := re.search(
+        r'''class='next'>\s*<a\s*href="([^"]+)">Next''', listhtml, re.DOTALL
+    ):
+        nextp = site.url[:-1] + nextp[1]
         cp = re.compile(r'''class='page\s*current'>\s*([\d,]*)''').findall(listhtml)[0]
         lp = re.compile(r'''class='last'>\s*[^\d]+(\d+).+?>Last''').findall(listhtml)[0]
         site.add_dir('Next Page... (Currently in Page {0} of {1})'.format(cp, lp), nextp, 'List', site.img_next)
@@ -56,7 +62,7 @@ def List(url):
 
 @site.register()
 def ListPL(url):
-    purl = site.url + 'playlist/' + url.split('-')[-1][1:]
+    purl = f'{site.url}playlist/' + url.split('-')[-1][1:]
     headers = {'X-Requested-With': 'XMLHttpRequest',
                'X-MOD-SBB-CTYPE': 'xhr',
                'Accept': 'application/json'}
@@ -81,7 +87,7 @@ def ListPL(url):
 @site.register()
 def PlayPL(url, name, download=None):
     vp = utils.VideoPlayer(name, download)
-    purl = site.url + 'playlist/' + url.split('-')[-1][1:]
+    purl = f'{site.url}playlist/' + url.split('-')[-1][1:]
     headers = {'X-Requested-With': 'XMLHttpRequest',
                'X-MOD-SBB-CTYPE': 'xhr',
                'Accept': 'application/json'}
@@ -106,9 +112,10 @@ def ListScenes(url):
         info = utils.cleantext(info)
         videopage = site.url[:-1] + re.compile(r'href="([^"]+)').findall(title)[-1]
         site.add_download_link(name, videopage, 'Playvid', img, info, noDownload=True, duration=duration)
-    nextp = re.search(r'''class='next'>\s*<a\s*href="([^"]+)">Next''', listhtml, re.DOTALL)
-    if nextp:
-        nextp = site.url[:-1] + nextp.group(1)
+    if nextp := re.search(
+        r'''class='next'>\s*<a\s*href="([^"]+)">Next''', listhtml, re.DOTALL
+    ):
+        nextp = site.url[:-1] + nextp[1]
         cp = re.compile(r'''class='page\s*current'>\s*([\d,]*)''').findall(listhtml)[0]
         lp = re.compile(r'''class='last'>\s*[^\d]+(\d+).+?>Last''').findall(listhtml)[0]
         site.add_dir('Next Page... (Currently in Page {0} of {1})'.format(cp, lp), nextp, 'List', site.img_next)
@@ -121,12 +128,15 @@ def Playvid(url, name, download=None):
     vp = utils.VideoPlayer(name, download)
     vp.progress.update(25, "[CR]Loading video page[CR]")
     videohtml = utils.getHtml(url)
-    match = re.compile(r'<div\s*id="video_container"[^>]+?data-config="([^"]+)', re.IGNORECASE | re.DOTALL).search(videohtml)
-    if match:
-        match = match.group(1).replace('&quot;', '"')
-        vidurl = re.compile(r'"file"\s*:\s*"([^"]+)', re.IGNORECASE | re.DOTALL).search(match)
-        if vidurl:
-            vp.play_from_direct_link(vidurl.group(1))
+    if match := re.compile(
+        r'<div\s*id="video_container"[^>]+?data-config="([^"]+)',
+        re.IGNORECASE | re.DOTALL,
+    ).search(videohtml):
+        match = match[1].replace('&quot;', '"')
+        if vidurl := re.compile(
+            r'"file"\s*:\s*"([^"]+)', re.IGNORECASE | re.DOTALL
+        ).search(match):
+            vp.play_from_direct_link(vidurl[1])
     else:
         vp.progress.close()
         utils.notify('Oh oh', 'No video found')

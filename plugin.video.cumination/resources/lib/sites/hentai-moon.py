@@ -33,13 +33,40 @@ ajaxmost = '?mode=async&function=get_block&block_id=list_videos_common_videos_li
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/?mode=async&function=get_block&block_id=list_categories_categories_list&sort_by=title', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Series[/COLOR]', site.url + 'series/?mode=async&function=get_block&block_id=list_dvds_channels_list&sort_by=title&from=1', 'Series', site.img_cat)
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'tags/', 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Top Rated[/COLOR]', site.url + 'top-rated/' + ajaxtop, 'List', site.img_cat)
-    site.add_dir('[COLOR hotpink]Most Viewed[/COLOR]', site.url + 'most-popular/' + ajaxmost, 'List', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
-    List(site.url + 'latest-updates/' + ajaxlist)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/?mode=async&function=get_block&block_id=list_categories_categories_list&sort_by=title',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Series[/COLOR]',
+        f'{site.url}series/?mode=async&function=get_block&block_id=list_dvds_channels_list&sort_by=title&from=1',
+        'Series',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]', f'{site.url}tags/', 'Tags', site.img_cat
+    )
+    site.add_dir(
+        '[COLOR hotpink]Top Rated[/COLOR]',
+        f'{site.url}top-rated/{ajaxtop}',
+        'List',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Most Viewed[/COLOR]',
+        f'{site.url}most-popular/{ajaxmost}',
+        'List',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}latest-updates/{ajaxlist}')
 
 
 @site.register()
@@ -49,18 +76,16 @@ def List(url):
     for videopage, name, img, hd, duration in match:
         name = utils.cleantext(name)
         hd = " [COLOR orange]HD[/COLOR]" if 'is_hd' in hd else ''
-        contexturl = (utils.addon_sys
-                      + "?mode=" + str('hentai-moon.Lookupinfo')
-                      + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu = ('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode=hentai-moon.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = '[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})'
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu, duration=duration, quality=hd)
-    np = re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        np = np.group(1)
-        pagelookup = re.search(r"(from(?:_videos)?)=(\d+)", url)
-        if pagelookup:
-            page = pagelookup.group(2)
-            fromtxt = pagelookup.group(1)
+    if np := re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).search(
+        listhtml
+    ):
+        np = np[1]
+        if pagelookup := re.search(r"(from(?:_videos)?)=(\d+)", url):
+            page = pagelookup[2]
+            fromtxt = pagelookup[1]
             url = url.replace("{0}={1}".format(fromtxt, page), "{0}={1}".format(fromtxt, np))
             site.add_dir('Next Page ({0})'.format(np), url, 'List', site.img_next)
 
@@ -72,7 +97,7 @@ def Categories(url):
     listhtml = utils.getHtml(url)
     match = re.compile(r'item"\s+?href="([^"]+)"\s?title="([^"]+)".*?src="([^"]+)".*?videos">([^<]+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for catpage, name, img, videos in match:
-        name = utils.cleantext(name) + " [COLOR deeppink]" + videos.strip() + "[/COLOR]"
+        name = f"{utils.cleantext(name)} [COLOR deeppink]{videos.strip()}[/COLOR]"
         catpage = catpage + ajaxcommon
         site.add_dir(name, catpage, 'List', img, name)
     utils.eod()
@@ -94,16 +119,16 @@ def Series(url):
     listhtml = utils.getHtml(url)
     match = re.compile(r'href="([^"]+)"\s+?title="([^"]+)".*?data-original="([^"]+)".*?videos">([^<]+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for seriepage, name, img, videos in match:
-        name = utils.cleantext(name) + " [COLOR deeppink]" + videos.strip() + "[/COLOR]"
+        name = f"{utils.cleantext(name)} [COLOR deeppink]{videos.strip()}[/COLOR]"
         seriepage = seriepage + ajaxcommon
         site.add_dir(name, seriepage, 'List', img, name)
-    np = re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        np = np.group(1)
-        pagelookup = re.search(r"(from(?:_videos)?)=(\d+)", url)
-        if pagelookup:
-            page = pagelookup.group(2)
-            fromtxt = pagelookup.group(1)
+    if np := re.compile(r':(\d+)">Next', re.DOTALL | re.IGNORECASE).search(
+        listhtml
+    ):
+        np = np[1]
+        if pagelookup := re.search(r"(from(?:_videos)?)=(\d+)", url):
+            page = pagelookup[2]
+            fromtxt = pagelookup[1]
             url = url.replace("{0}={1}".format(fromtxt, page), "{0}={1}".format(fromtxt, np))
             site.add_dir('Next Page ({0})'.format(np), url, 'Series', site.img_next)
     utils.eod()
@@ -138,17 +163,17 @@ def Playvid(url, name, download=None):
         for surl, qual in items:
             qual = '00' if qual == 'preview' else qual
             surl = kvs_decode(surl, license)
-            sources.update({qual: surl})
+            sources[qual] = surl
 
-    if len(sources) > 0:
+    if sources:
         videourl = utils.selector('Select quality', sources, setting_valid='qualityask', sort_by=lambda x: 1081 if x == '4k' else int(x[:-1]), reverse=True)
         if not videourl:
             vp.progress.close()
             return
-    else:
-        match = re.search(r'Download:\s*?<a href="([^"]+)"', vpage, re.IGNORECASE | re.DOTALL)
-        if match:
-            videourl = match.group(1)
+    elif match := re.search(
+        r'Download:\s*?<a href="([^"]+)"', vpage, re.IGNORECASE | re.DOTALL
+    ):
+        videourl = match[1]
 
     if videourl:
         vp.play_from_direct_link(videourl)

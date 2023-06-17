@@ -28,10 +28,27 @@ site = AdultSite('freshporno', '[COLOR hotpink]FreshPorno[/COLOR]', 'https://fre
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'tags/', 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Channels[/COLOR]', site.url + 'channels/', 'Channels', site.img_cat)
-    site.add_dir('[COLOR hotpink]Models[/COLOR]', site.url + 'models/', 'Models', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]', f'{site.url}tags/', 'Tags', site.img_cat
+    )
+    site.add_dir(
+        '[COLOR hotpink]Channels[/COLOR]',
+        f'{site.url}channels/',
+        'Channels',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Models[/COLOR]',
+        f'{site.url}models/',
+        'Models',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
     List(site.url)
     utils.eod()
 
@@ -45,18 +62,22 @@ def List(url):
     for videopage, name, img in match:
         name = utils.cleantext(name)
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                          + "?mode=" + str('freshporno.Lookupinfo')
-                          + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        contexturl = f"{utils.addon_sys}?mode=freshporno.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu)
 
-    np = re.compile(r'next"><a\s*href="([^"]+)"', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        page_number = np.group(1).split('/')[-2]
-        site.add_dir('Next Page (' + page_number + ')', site.url + np.group(1), 'List', site.img_next)
+    if np := re.compile(
+        r'next"><a\s*href="([^"]+)"', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        page_number = np[1].split('/')[-2]
+        site.add_dir(
+            f'Next Page ({page_number})',
+            site.url + np[1],
+            'List',
+            site.img_next,
+        )
     utils.eod()
 
 
@@ -79,17 +100,19 @@ def Playvid(url, name, download=None):
         for surl, qual in items:
             qual = '00' if qual == 'preview' else qual
             surl = kvs_decode(surl, license)
-            sources.update({qual: surl})
+            sources[qual] = surl
 
-    if len(sources) > 0:
+    if sources:
         videourl = utils.selector('Select quality', sources, setting_valid='qualityask', sort_by=lambda x: 1081 if x == '4k' else int(x[:-1]), reverse=True)
         if not videourl:
             vp.progress.close()
             return
-    else:
-        match = re.search(r'href="([^"]+)"\s*class="btn-download"', vpage, re.IGNORECASE | re.DOTALL)
-        if match:
-            videourl = match.group(1)
+    elif match := re.search(
+        r'href="([^"]+)"\s*class="btn-download"',
+        vpage,
+        re.IGNORECASE | re.DOTALL,
+    ):
+        videourl = match[1]
 
     if videourl:
         vp.play_from_direct_link(videourl)
@@ -102,7 +125,7 @@ def Playvid(url, name, download=None):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '-')
         searchUrl = searchUrl + title
@@ -125,12 +148,12 @@ def Channels(url):
     listhtml = utils.getHtml(url)
     match = re.compile(r'content-wrapper">.*?title="([^"]+)"\s*href="([^"]+)"(.*?)</i>([^<]+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for name, channelpage, img, videos in match:
-        name = "{} - {}".format(utils.cleantext(name.strip()), videos)
+        name = f"{utils.cleantext(name.strip())} - {videos}"
 
         if 'no image' in img:
             img = ''
         elif 'data-original' in img:
-            img = re.search('data-original="([^"]+)"', img, re.IGNORECASE | re.DOTALL).group(1)
+            img = re.search('data-original="([^"]+)"', img, re.IGNORECASE | re.DOTALL)[1]
 
         site.add_dir(name, channelpage, 'List', img)
 
@@ -142,19 +165,25 @@ def Models(url):
     listhtml = utils.getHtml(url)
     match = re.compile(r'content-wrapper">.*?title="([^"]+)"\s*href="([^"]+)"(.*?)</i>([^<]+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for name, modelpage, img, videos in match:
-        name = "{} - {}".format(utils.cleantext(name.strip()), videos)
+        name = f"{utils.cleantext(name.strip())} - {videos}"
 
         if 'no image' in img:
             img = ''
         elif 'data-original' in img:
-            img = re.search('data-original="([^"]+)"', img, re.IGNORECASE | re.DOTALL).group(1)
+            img = re.search('data-original="([^"]+)"', img, re.IGNORECASE | re.DOTALL)[1]
 
         site.add_dir(name, modelpage, 'List', img)
 
-    np = re.compile(r'next"><a\s*href="([^"]+)"', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        page_number = np.group(1).split('/')[-2]
-        site.add_dir('Next Page (' + page_number + ')', site.url + np.group(1), 'Models', site.img_next)
+    if np := re.compile(
+        r'next"><a\s*href="([^"]+)"', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        page_number = np[1].split('/')[-2]
+        site.add_dir(
+            f'Next Page ({page_number})',
+            site.url + np[1],
+            'Models',
+            site.img_next,
+        )
 
     utils.eod()
 

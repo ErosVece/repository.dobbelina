@@ -29,16 +29,34 @@ site = AdultSite('naked', '[COLOR hotpink]Naked[/COLOR]', 'https://www.naked.com
 
 @site.register(default_mode=True)
 def Main():
-    female = True if utils.addon.getSetting("chatfemale") == "true" else False
-    male = True if utils.addon.getSetting("chatmale") == "true" else False
-    trans = True if utils.addon.getSetting("chattrans") == "true" else False
+    female = utils.addon.getSetting("chatfemale") == "true"
+    male = utils.addon.getSetting("chatmale") == "true"
+    trans = utils.addon.getSetting("chattrans") == "true"
     site.add_dir('[COLOR red]Refresh naked.com images[/COLOR]', '', 'clean_database', '', Folder=False)
     if female:
-        site.add_dir('[COLOR hotpink]Females[/COLOR]', site.url + 'live/girls/', 'List', '', 1)
+        site.add_dir(
+            '[COLOR hotpink]Females[/COLOR]',
+            f'{site.url}live/girls/',
+            'List',
+            '',
+            1,
+        )
     if male:
-        site.add_dir('[COLOR hotpink]Males[/COLOR]', site.url + 'live/guys/', 'List', '', 1)
+        site.add_dir(
+            '[COLOR hotpink]Males[/COLOR]',
+            f'{site.url}live/guys/',
+            'List',
+            '',
+            1,
+        )
     if trans:
-        site.add_dir('[COLOR hotpink]Transsexual[/COLOR]', site.url + 'live/trans/', 'List', '', 1)
+        site.add_dir(
+            '[COLOR hotpink]Transsexual[/COLOR]',
+            f'{site.url}live/trans/',
+            'List',
+            '',
+            1,
+        )
     utils.eod()
 
 
@@ -50,7 +68,7 @@ def List(url):
     data = utils._getHtml(url, site.url)
     data = re.compile(r"models':\s*(.*?),\s*'", re.DOTALL | re.IGNORECASE).findall(data)[0]
     data = re.sub(r'\s\s+', '', data)
-    data = data[:-2] + ']'
+    data = f'{data[:-2]}]'
     models = json.loads(data)
     for model in models:
         name = model.get('model_seo_name').replace('-', ' ').title()
@@ -62,7 +80,7 @@ def List(url):
         if model.get('topic'):
             subject += utils.cleantext(model.get('topic') if utils.PY3 else model.get('topic').encode('utf8'))
         status = model.get('room_status')
-        name = name + " [COLOR deeppink][" + age + "][/COLOR] " + status
+        name = f"{name} [COLOR deeppink][{age}][/COLOR] {status}"
         mid = model.get('model_id')
         img = 'https://live-screencaps.vscdns.com/{0}-desktop.jpg'.format(mid)
         videourl = 'https://ws.vs3.com/chat/get-stream-urls.php?model_id={0}&video_host={1}'.format(
@@ -78,9 +96,9 @@ def clean_database(showdialog=True):
         with conn:
             list = conn.execute("SELECT id, cachedurl FROM texture WHERE url LIKE '%%%s%%';" % ".vscdns.com")
             for row in list:
-                conn.execute("DELETE FROM sizes WHERE idtexture LIKE '%s';" % row[0])
+                conn.execute(f"DELETE FROM sizes WHERE idtexture LIKE '{row[0]}';")
                 try:
-                    os.remove(utils.TRANSLATEPATH("special://thumbnails/" + row[1]))
+                    os.remove(utils.TRANSLATEPATH(f"special://thumbnails/{row[1]}"))
                 except:
                     pass
             conn.execute("DELETE FROM texture WHERE url LIKE '%%%s%%';" % ".vscdns.com")
@@ -97,10 +115,8 @@ def Playvid(url, name):
     params = urllib_parse.parse_qs(url.split('?')[1])
     murl = '{0}webservices/chat-room-interface.php?a=login_room&model_id={1}&t={2}'.format(
         site.url, params['model_id'][0], params['t'][0])
-    mdata = utils._getHtml(murl, site.url)
-    if mdata:
-        mdata = json.loads(mdata).get('config', {}).get('room')
-        if mdata:
+    if mdata := utils._getHtml(murl, site.url):
+        if mdata := json.loads(mdata).get('config', {}).get('room'):
             if mdata.get('status') != 'O':
                 utils.notify('Model not in freechat')
                 return None
@@ -119,17 +135,15 @@ def Playvid(url, name):
         return
 
     if playmode == 0:
-        sdata = vdata.get('hls')[0]
-        if sdata:
+        if sdata := vdata.get('hls')[0]:
             videourl = 'https:{0}'.format(sdata.get('url'))
         else:
             utils.notify('Oh oh', 'Couldn\'t find a playable webcam link')
             return
 
     elif playmode == 1:
-        sdata = vdata.get('flash')[0]
-        if sdata:
-            swfurl = site.url + "chat/flash/live-video-player-nw2.swf"
+        if sdata := vdata.get('flash')[0]:
+            swfurl = f"{site.url}chat/flash/live-video-player-nw2.swf"
             videourl = "rtmp://{0} app=liveEdge/{3} swfUrl={1} pageUrl={2} playpath=mp4:{3}".format(sdata.get('stream_host'), swfurl, site.url, sdata.get('stream_name'))
         else:
             utils.notify('Oh oh', 'Couldn\'t find a playable webcam link')
