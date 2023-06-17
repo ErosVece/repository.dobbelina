@@ -37,10 +37,20 @@ def getBaselink(url):
 @site2.register(default_mode=True)
 def Main(url):
     siteurl = getBaselink(url)
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', siteurl + 'categories', 'Cats', site.img_cat)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{siteurl}categories',
+        'Cats',
+        site.img_cat,
+    )
     site.add_dir('[COLOR hotpink]Tags[/COLOR]', siteurl, 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', siteurl + 'search/videos/', 'Search', site.img_search)
-    List(siteurl + 'videos?o=mr&page=1')
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{siteurl}search/videos/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{siteurl}videos?o=mr&page=1')
     utils.eod()
 
 
@@ -57,18 +67,18 @@ def List(url):
         hd = 'HD' if 'hd' in hd.lower() else ''
         videopage = siteurl + videopage
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                      + "?mode=" + str('alluretube.Lookupinfo')
-                      + "&url=" + urllib_parse.quote_plus(videopage))
+        contexturl = f"{utils.addon_sys}?mode=alluretube.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
 
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration, quality=hd, contextm=contextmenu)
 
-    np = re.compile(r'<a\s+class="page-link"\s+href="([^"]+)" class="prevnext"', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        site.add_dir('Next Page...', np.group(1), 'List', site.img_next)
+    if np := re.compile(
+        r'<a\s+class="page-link"\s+href="([^"]+)" class="prevnext"',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
+        site.add_dir('Next Page...', np[1], 'List', site.img_next)
     utils.eod()
 
 
@@ -82,7 +92,7 @@ def Playvid(url, name, download=None):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '-')
         searchUrl = searchUrl + title + '?o=mr&page=1'
@@ -95,7 +105,7 @@ def Cats(url):
     listhtml = utils.getHtml(url, siteurl)
     match = re.compile(r'/(videos/[^"]+)">.*?src="([^"]+)"\s+title="([^"]+)".*?float-right">([^<]+)</', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for catpage, img, name, videos in match:
-        name = '{} - [COLOR hotpink]{}[/COLOR]'.format(utils.cleantext(name), videos.strip())
+        name = f'{utils.cleantext(name)} - [COLOR hotpink]{videos.strip()}[/COLOR]'
         catpage = siteurl + catpage + '?o=mr&page=1'
         img = siteurl + img
         site.add_dir(name, catpage, 'List', img)
@@ -109,8 +119,8 @@ def Tags(url):
     listhtml = utils.getHtml(url, siteurl)
     match = re.compile(r"name:\s+'([^']+)', type:\s+'([^']+)'", re.DOTALL | re.IGNORECASE).findall(listhtml)
     for tagpage, videos in sorted(match):
-        name = '{} - [COLOR hotpink]{}[/COLOR]'.format(utils.cleantext(tagpage), videos)
-        site.add_dir(name, siteurl + 'search/videos/', 'Search', '', keyword=tagpage)
+        name = f'{utils.cleantext(tagpage)} - [COLOR hotpink]{videos}[/COLOR]'
+        site.add_dir(name, f'{siteurl}search/videos/', 'Search', '', keyword=tagpage)
     utils.eod()
 
 

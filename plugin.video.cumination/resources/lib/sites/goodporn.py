@@ -34,14 +34,25 @@ def Main():
     gpsortorder = utils.addon.getSetting('gpsortorder') if utils.addon.getSetting('gpsortorder') else 'last_content_date'
     sortname = list(sort_orders.keys())[list(sort_orders.values()).index(gpsortorder)]
 
-    context = (utils.addon_sys + "?mode=" + str('goodporn.PLContextMenu'))
-    contextmenu = [('[COLOR orange]Sort order[/COLOR]', 'RunPlugin(' + context + ')')]
+    context = f"{utils.addon_sys}?mode=goodporn.PLContextMenu"
+    contextmenu = [('[COLOR orange]Sort order[/COLOR]', f'RunPlugin({context})')]
 
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Playlists[/COLOR] [COLOR orange]{}[/COLOR]'.format(sortname), site.url + 'playlists/?mode=async&function=get_block&block_id=list_playlists_common_playlists_list&sort_by={}&from=01'.format(gpsortorder), 'Playlists', site.img_cat, contextm=contextmenu)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        f'[COLOR hotpink]Playlists[/COLOR] [COLOR orange]{sortname}[/COLOR]',
+        f'{site.url}playlists/?mode=async&function=get_block&block_id=list_playlists_common_playlists_list&sort_by={gpsortorder}&from=01',
+        'Playlists',
+        site.img_cat,
+        contextm=contextmenu,
+    )
     site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '/search/{0}/?mode=async&function=get_block&block_id=list_videos_videos_list_search_result&q={0}&category_ids=&sort_by=&from_videos=1', 'Search', site.img_search)
 
-    List(site.url + 'latest-updates/', 1)
+    List(f'{site.url}latest-updates/', 1)
     utils.eod()
 
 
@@ -61,26 +72,33 @@ def List(url, page=1):
         for private, videopage, name, img, hd, name2 in match:
             hd = 'HD' if '>HD<' in hd else ''
             name = utils.cleantext(name)
-            if 'private' in private.lower():
-                private = "[COLOR blue] [PV][/COLOR] "
-            else:
-                private = ""
+            private = "[COLOR blue] [PV][/COLOR] " if 'private' in private.lower() else ""
             name = private + name
-            img = 'https:' + img if img.startswith('//') else img
+            img = f'https:{img}' if img.startswith('//') else img
             site.add_download_link(name, videopage, 'Playvid', img, name, duration=name2, quality=hd)
 
     if re.search(r'<li\s*class="next"><a', listhtml, re.DOTALL | re.IGNORECASE):
         lastp = re.compile(r':(\d+)">Last', re.DOTALL | re.IGNORECASE).findall(listhtml)
-        lastp = '/{}'.format(lastp[0]) if lastp else ''
+        lastp = f'/{lastp[0]}' if lastp else ''
 
         page = 1 if not page else page
         npage = page + 1
         if '?' in url:
             nurl = re.sub(r'([&?])from([^=]*)=(\d+)', r'\1from\2={0:02d}', url).format(npage)
         else:
-            nurl = url.replace('/{}/'.format(page), '/{}/'.format(npage)) if '/{}/'.format(page) in url else '{}{}/'.format(url, npage)
+            nurl = (
+                url.replace(f'/{page}/', f'/{npage}/')
+                if f'/{page}/' in url
+                else f'{url}{npage}/'
+            )
 
-        site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (' + str(npage) + lastp + ')', nurl, 'List', site.img_next, npage)
+        site.add_dir(
+            f'[COLOR hotpink]Next Page...[/COLOR] ({str(npage)}{lastp})',
+            nurl,
+            'List',
+            site.img_next,
+            npage,
+        )
     utils.eod()
 
 
@@ -102,7 +120,7 @@ def Playvid(url, name, download=None):
         for surl, qual in items:
             qual = '00' if qual == 'preview' else qual
             surl = kvs_decode(surl, license)
-            sources.update({qual: surl})
+            sources[qual] = surl
     videourl = utils.selector('Select quality', sources, setting_valid='qualityask', sort_by=lambda x: 1081 if x == '4k' else int(x[:-1]), reverse=True)
 
     if not videourl:
@@ -116,8 +134,8 @@ def Categories(url):
     cathtml = utils.getHtml(url, '')
     match = re.compile(r'"item"\s*href="([^"]+)"\s*title="([^"]+)">\n\s*<div.+?src="([^"]+).+?videos">([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, name2 in match:
-        name = utils.cleantext(name) + ' [COLOR cyan][{}][/COLOR]'.format(name2)
-        img = 'https:' + img if img.startswith('//') else img
+        name = f'{utils.cleantext(name)} [COLOR cyan][{name2}][/COLOR]'
+        img = f'https:{img}' if img.startswith('//') else img
         site.add_dir(name, catpage, 'List', img, 1)
     xbmcplugin.addSortMethod(utils.addon_handle, xbmcplugin.SORT_METHOD_TITLE)
     utils.eod()
@@ -129,19 +147,25 @@ def Playlists(url, page=1):
     img = str(randint(1, 4))
     match = re.compile(r'class="item\s*".+?href="([^"]+)"\s*title="([^"]+)".+?class="thumb video' + img + '.+?data-original="([^"]+)".+?class="videos">([^<]+)', re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catpage, name, img, name2 in match:
-        name = utils.cleantext(name) + ' [COLOR cyan][{}][/COLOR]'.format(name2)
-        img = 'https:' + img if img.startswith('//') else img
+        name = f'{utils.cleantext(name)} [COLOR cyan][{name2}][/COLOR]'
+        img = f'https:{img}' if img.startswith('//') else img
         catpage += '?mode=async&function=get_block&block_id=playlist_view_playlist_view&sort_by=added2fav_date&from=1'
         site.add_dir(name, catpage, 'ListPL', img, 1)
     if re.search(r'<li\s*class="next"><a', cathtml, re.DOTALL | re.IGNORECASE):
         lastp = re.compile(r':(\d+)">Last', re.DOTALL | re.IGNORECASE).findall(cathtml)
-        lastp = '/{}'.format(lastp[0]) if lastp else ''
+        lastp = f'/{lastp[0]}' if lastp else ''
 
         page = 1 if not page else page
         npage = page + 1
         nurl = re.sub(r'from([^=]*)=(\d+)', r'from\1={0:02d}', url).format(npage)
 
-        site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (' + str(npage) + lastp + ')', nurl, 'Playlists', site.img_next, npage)
+        site.add_dir(
+            f'[COLOR hotpink]Next Page...[/COLOR] ({str(npage)}{lastp})',
+            nurl,
+            'Playlists',
+            site.img_next,
+            npage,
+        )
     utils.eod()
 
 
@@ -157,21 +181,31 @@ def ListPL(url, page=1):
     match = re.compile(r'class="title">([^<]+)<.+?href="([^"]+)".+?data-original="([^"]+)"', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for name, videopage, img in match:
         name = utils.cleantext(name)
-        img = 'https:' + img if img.startswith('//') else img
+        img = f'https:{img}' if img.startswith('//') else img
         site.add_download_link(name, videopage, 'Playvid', img, name)
 
     if re.search(r'<li\s*class="next"><a', listhtml, re.DOTALL | re.IGNORECASE):
         lastp = re.compile(r':(\d+)">Last', re.DOTALL | re.IGNORECASE).findall(listhtml)
-        lastp = '/{}'.format(lastp[0]) if lastp else ''
+        lastp = f'/{lastp[0]}' if lastp else ''
 
         page = 1 if not page else page
         npage = page + 1
         if '?' in url:
             nurl = re.sub(r'([&?])from([^=]*)=(\d+)', r'\1from\2={}', url).format(npage)
         else:
-            nurl = url.replace('/{}/'.format(page), '/{}/'.format(npage)) if '/{}/'.format(page) in url else '{}{}/'.format(url, npage)
+            nurl = (
+                url.replace(f'/{page}/', f'/{npage}/')
+                if f'/{page}/' in url
+                else f'{url}{npage}/'
+            )
 
-        site.add_dir('[COLOR hotpink]Next Page...[/COLOR] (' + str(npage) + lastp + ')', nurl, 'ListPL', site.img_next, npage)
+        site.add_dir(
+            f'[COLOR hotpink]Next Page...[/COLOR] ({str(npage)}{lastp})',
+            nurl,
+            'ListPL',
+            site.img_next,
+            npage,
+        )
     utils.eod()
 
 
@@ -179,7 +213,7 @@ def ListPL(url, page=1):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '%20')
         searchUrl = searchUrl.format(title)
@@ -189,7 +223,6 @@ def Search(url, keyword=None):
 @site.register()
 def PLContextMenu():
     sort_orders = {'Recently updated': 'last_content_date', 'Most viewed': 'playlist_viewed', 'Top rated': 'rating', 'Most commented': 'most_commented', 'Most videos': 'total_videos'}
-    order = utils.selector('Select order', sort_orders)
-    if order:
+    if order := utils.selector('Select order', sort_orders):
         utils.addon.setSetting('gpsortorder', order)
         xbmc.executebuiltin('Container.Refresh')

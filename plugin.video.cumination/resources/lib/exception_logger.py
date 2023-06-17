@@ -41,9 +41,7 @@ def _format_vars(variables):
     var_list = [(var, val) for var, val in variables.items()
                 if not (var.startswith('__') or var.endswith('__'))]
     var_list.sort(key=lambda i: i[0])
-    lines = []
-    for var, val in var_list:
-        lines.append('{} = {}'.format(var, pformat(val)))
+    lines = [f'{var} = {pformat(val)}' for var, val in var_list]
     return '\n'.join(lines)
 
 
@@ -53,9 +51,9 @@ def _format_code_context(frame_info):
     if frame_info[4] is not None:
         for i, line in enumerate(frame_info[4], frame_info[2] - frame_info[5]):
             if i == frame_info[2]:
-                context += '{}:>{}'.format(str(i).rjust(5), line)
+                context += f'{str(i).rjust(5)}:>{line}'
             else:
-                context += '{}: {}'.format(str(i).rjust(5), line)
+                context += f'{str(i).rjust(5)}: {line}'
     return context
 
 
@@ -136,9 +134,9 @@ def log_exception(logger_func=logger.error):
     try:
         yield
     except Exception as exc:
-        stack_trace = ''
-        for frame_info in inspect.trace(5):
-            stack_trace += _format_frame_info(frame_info)
+        stack_trace = ''.join(
+            _format_frame_info(frame_info) for frame_info in inspect.trace(5)
+        )
         message = EXCEPTION_TEMPLATE.format(
             exc_type=exc.__class__.__name__,
             exc=exc,

@@ -27,10 +27,25 @@ site = AdultSite('justfullporn', '[COLOR hotpink]Just Full Porn[/COLOR]', 'https
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Actors[/COLOR]', site.url + 'tags/', 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s=', 'Search', site.img_search)
-    List(site.url + '?filter=latest')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Actors[/COLOR]',
+        f'{site.url}tags/',
+        'Tags',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?s=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}?filter=latest')
     utils.eod()
 
 
@@ -43,18 +58,18 @@ def List(url):
     for videopage, name, img in match:
         name = utils.cleantext(name)
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                          + "?mode=" + str('justfullporn.Lookupinfo')
-                          + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        contexturl = f"{utils.addon_sys}?mode=justfullporn.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu)
 
-    np = re.compile(r'class="pagination".+?class="current">\d+</a></li><li><a\s*href="([^"]+)', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        page_number = np.group(1).split('/')[-2]
-        site.add_dir('Next Page (' + page_number + ')', np.group(1), 'List', site.img_next)
+    if np := re.compile(
+        r'class="pagination".+?class="current">\d+</a></li><li><a\s*href="([^"]+)',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
+        page_number = np[1].split('/')[-2]
+        site.add_dir(f'Next Page ({page_number})', np[1], 'List', site.img_next)
     utils.eod()
 
 
@@ -68,7 +83,7 @@ def Playvid(url, name, download=None):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '+')
         searchUrl = searchUrl + title + '&filter=latest'
@@ -81,13 +96,15 @@ def Categories(url):
     match = re.compile(r'<article.+?href="([^"]+)"\s*title="([^"]+).+?(?:poster|src)="([^"]+)', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for catpage, name, img in sorted(match, key=lambda x: x[1].strip().lower()):
         name = utils.cleantext(name.strip())
-        site.add_dir(name, catpage + '?filter=latest', 'List', img)
+        site.add_dir(name, f'{catpage}?filter=latest', 'List', img)
 
 
-    np = re.compile(r'class="pagination".+?class="current">\d+</a></li><li><a\s*href="([^"]+)', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        page_number = np.group(1).split('/')[-2]
-        site.add_dir('Next Page (' + page_number + ')', np.group(1), 'Categories', site.img_next)
+    if np := re.compile(
+        r'class="pagination".+?class="current">\d+</a></li><li><a\s*href="([^"]+)',
+        re.DOTALL | re.IGNORECASE,
+    ).search(listhtml):
+        page_number = np[1].split('/')[-2]
+        site.add_dir(f'Next Page ({page_number})', np[1], 'Categories', site.img_next)
 
     utils.eod()
 

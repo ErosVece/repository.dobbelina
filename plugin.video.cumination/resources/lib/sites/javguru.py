@@ -34,13 +34,48 @@ enames = {'STREAM DD': 'DoodStream',
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'wp-json/wp/v2/categories/', 'Catjson', site.img_cat)
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'jav-tags-list/', 'Toplist', site.img_cat)
-    site.add_dir('[COLOR hotpink]Series[/COLOR]', site.url + 'jav-series/', 'Toplist', site.img_cat)
-    site.add_dir('[COLOR hotpink]Actress[/COLOR]', site.url + 'jav-actress-list/', 'Actress', site.img_cat)
-    site.add_dir('[COLOR hotpink]Studios[/COLOR]', site.url + 'jav-studio-list/', 'Cat', site.img_cat)
-    site.add_dir('[COLOR hotpink]Uncensored[/COLOR]', site.url + 'category/jav-uncensored/', 'List', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + '?s=', 'Search', site.img_search)
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}wp-json/wp/v2/categories/',
+        'Catjson',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]',
+        f'{site.url}jav-tags-list/',
+        'Toplist',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Series[/COLOR]',
+        f'{site.url}jav-series/',
+        'Toplist',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Actress[/COLOR]',
+        f'{site.url}jav-actress-list/',
+        'Actress',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Studios[/COLOR]',
+        f'{site.url}jav-studio-list/',
+        'Cat',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Uncensored[/COLOR]',
+        f'{site.url}category/jav-uncensored/',
+        'List',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}?s=',
+        'Search',
+        site.img_search,
+    )
     List(site.url)
 
 
@@ -51,19 +86,19 @@ def List(url):
     for video, img, name in match:
         name = utils.cleantext(name)
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                      + "?mode=" + str('javguru.Lookupinfo')
-                      + "&url=" + urllib_parse.quote_plus(video))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        contexturl = f"{utils.addon_sys}?mode=javguru.Lookupinfo&url={urllib_parse.quote_plus(video)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, video, 'Play', img, name, contextm=contextmenu)
 
-    match = re.compile(r'''class='current'.+?href="([^"]+)">(\d+)<''', re.DOTALL | re.IGNORECASE).findall(listhtml)
-    if match:
+    if match := re.compile(
+        r'''class='current'.+?href="([^"]+)">(\d+)<''',
+        re.DOTALL | re.IGNORECASE,
+    ).findall(listhtml):
         npage, np = match[0]
         lp = re.compile(r''' href="[^"]+page/(\d+)/[^"]*">Last''', re.DOTALL | re.IGNORECASE).findall(listhtml)
-        lp = '/' + lp[0] if lp else ''
+        lp = f'/{lp[0]}' if lp else ''
         site.add_dir('[COLOR hotpink]Next Page...[/COLOR] ({0}{1})'.format(np, lp), npage, 'List', site.img_next)
     utils.eod()
 
@@ -109,8 +144,9 @@ def Actress(url):
     for actressurl, img, name, videos in match:
         name = '{0} ({1})'.format(utils.cleantext(name), videos.strip())
         site.add_dir(name, site.url + actressurl, 'List', img)
-    match = re.compile(r'current".+?href="([^"]+)">(\d+)<', re.DOTALL | re.IGNORECASE).findall(actresshtml)
-    if match:
+    if match := re.compile(
+        r'current".+?href="([^"]+)">(\d+)<', re.DOTALL | re.IGNORECASE
+    ).findall(actresshtml):
         npage, np = match[0]
         site.add_dir('[COLOR hotpink]Next Page...[/COLOR] ({0})'.format(np), npage, 'Actress', site.img_next)
     utils.eod()
@@ -131,30 +167,31 @@ def Play(url, name, download=None):
     vp.progress.update(25, "[CR]Loading video page[CR]")
     sources = []
     videohtml = utils.getHtml(url)
-    match = re.compile('iframe_url":"([^"]+)"', re.DOTALL | re.IGNORECASE).findall(videohtml)
-    if match:
+    if match := re.compile(
+        'iframe_url":"([^"]+)"', re.DOTALL | re.IGNORECASE
+    ).findall(videohtml):
         for i, stream in enumerate(match):
             link = base64.b64decode(stream).decode('utf-8')
 
             vp.progress.update(25, "[CR]Loading streaming link {0} page[CR]".format(i + 1))
             streamhtml = utils.getHtml(link, url, error='raise')
             match = re.compile(r'''var OLID = '([^']+)'.+?src="([^']+)''', re.DOTALL | re.IGNORECASE).findall(streamhtml)
-            if match:
-                (olid, vurl) = match[0]
-                olid = olid[::-1]
-            else:
+            if not match:
                 continue
+            (olid, vurl) = match[0]
+            olid = olid[::-1]
             src = vurl + olid
             src = utils.getVideoLink(src, link)
-            sources.append('"{}"'.format(src))
-    match = re.compile(r"window\.open\('([^']+)'", re.DOTALL | re.IGNORECASE).findall(videohtml)
-    if match:
+            sources.append(f'"{src}"')
+    if match := re.compile(
+        r"window\.open\('([^']+)'", re.DOTALL | re.IGNORECASE
+    ).findall(videohtml):
         for dllink in match:
             vp.progress.update(60, "[CR]Loading download link page[CR]")
             dllink = utils.getHtml(dllink)
             match = re.compile('URL=([^"]+)"', re.DOTALL | re.IGNORECASE).findall(dllink)
             if match:
-                sources.append('"{}"'.format(match[0]))
+                sources.append(f'"{match[0]}"')
     if sources:
         vp.progress.update(75, "[CR]Loading video page[CR]")
         utils.kodilog(sources)

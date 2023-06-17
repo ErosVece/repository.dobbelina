@@ -41,18 +41,14 @@ def decode_window_bits(br):
     if n > 0:
         return 17 + n
     n = br.read_bits(3)
-    if n > 0:
-        return 8 + n
-    return 17
+    return 8 + n if n > 0 else 17
 
 
 def decode_var_len_uint8(br):
     """Decodes a number in the range [0..255], by reading 1 - 11 bits"""
     if br.read_bits(1):
         nbits = br.read_bits(3)
-        if nbits == 0:
-            return 1
-        return br.read_bits(nbits) + (1 << nbits)
+        return 1 if nbits == 0 else br.read_bits(nbits) + (1 << nbits)
     return 0
 
 
@@ -165,7 +161,7 @@ def read_huffman_code_lengths(code_length_code_lengths, num_symbols, code_length
                 space -= repeat_delta << (15 - repeat_code_len)
 
     if space != 0:
-        raise Exception('[read_huffman_code_lengths] space = %s' % space)
+        raise Exception(f'[read_huffman_code_lengths] space = {space}')
 
     for i in range(symbol, num_symbols):
         code_lengths[i] = 0
@@ -254,10 +250,9 @@ def translate_short_codes(code, ringbuffer, index):
     if code < NUM_DISTANCE_SHORT_CODES:
         index += kDistanceShortCodeIndexOffset[code]
         index &= 3
-        val = ringbuffer[index] + kDistanceShortCodeValueOffset[code]
+        return ringbuffer[index] + kDistanceShortCodeValueOffset[code]
     else:
-        val = code - NUM_DISTANCE_SHORT_CODES + 1
-    return val
+        return code - NUM_DISTANCE_SHORT_CODES + 1
 
 
 def move_to_front(v, index):
@@ -298,8 +293,7 @@ class DecodeContextMap:
         if self.num_huff_trees <= 1:
             return
 
-        use_rle_for_zeros = br.read_bits(1)
-        if use_rle_for_zeros:
+        if use_rle_for_zeros := br.read_bits(1):
             max_run_length_prefix = br.read_bits(4) + 1
 
         table = [HuffmanCode(0, 0) for _ in range(0, HUFFMAN_MAX_TABLE_SIZE)]
@@ -313,7 +307,7 @@ class DecodeContextMap:
                 self.context_map[i] = 0
                 i += 1
             elif code <= max_run_length_prefix:
-                for reps in range((1 << code) + br.read_bits(code), 0, -1):
+                for _ in range((1 << code) + br.read_bits(code), 0, -1):
                     if i >= context_map_size:
                         raise Exception('[DecodeContextMap] i >= context_map_size')
                     self.context_map[i] = 0

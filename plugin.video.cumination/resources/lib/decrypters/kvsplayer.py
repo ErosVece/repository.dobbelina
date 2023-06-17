@@ -9,7 +9,7 @@ def kvs_decode(vu, lc, hr='16'):
     def calcseed(lc, hr):
         f = lc.replace('$', '').replace('0', '1')
         j = int(len(f) / 2)
-        k = int(f[0:j + 1])
+        k = int(f[:j + 1])
         el = int(f[j:])
         fi = abs(el - k) * 4
         s = str(fi)
@@ -25,7 +25,7 @@ def kvs_decode(vu, lc, hr='16'):
 
     if vu.startswith('function/'):
         vup = vu.split('/')
-        uhash = vup[7][0: 2 * int(hr)]
+        uhash = vup[7][:2 * int(hr)]
         nchash = vup[7][2 * int(hr):]
         seed = calcseed(lc, hr)
         if seed and uhash:

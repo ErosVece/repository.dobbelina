@@ -27,11 +27,31 @@ site = AdultSite('javgg', '[COLOR hotpink]JavGG[/COLOR]', 'https://javgg.net/', 
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'tags', 'Cats', site.img_cat)
-    site.add_dir('[COLOR hotpink]Trending[/COLOR]', site.url + 'trending/', 'List', site.img_cat)
-    site.add_dir('[COLOR hotpink]Featured[/COLOR]', site.url + 'featured/', 'List', site.img_cat)
-    site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url + 'genre-list/', 'Tags', site.img_cat)
-    List(site.url + 'new-post/page/1/')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}tags',
+        'Cats',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Trending[/COLOR]',
+        f'{site.url}trending/',
+        'List',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Featured[/COLOR]',
+        f'{site.url}featured/',
+        'List',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Tags[/COLOR]',
+        f'{site.url}genre-list/',
+        'Tags',
+        site.img_cat,
+    )
+    List(f'{site.url}new-post/page/1/')
 
 
 @site.register()
@@ -46,20 +66,24 @@ def List(url):
         if genre:
             match = re.search(">([^<]+)<", genre, re.IGNORECASE | re.DOTALL)
             if match:
-                name = "{0} - {1}".format(name, match.group(1))
+                name = "{0} - {1}".format(name, match[1])
 
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                      + "?mode=" + str('javgg.Lookupinfo')
-                      + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        contexturl = f"{utils.addon_sys}?mode=javgg.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu)
 
-    np = re.compile("""arrow_pag' href="([^"]+)">""", re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        page_number = np.group(1).split('/')[-2]
-        site.add_dir('Next Page...  (Page {0})'.format(page_number), np.group(1), 'List', site.img_next)
+    if np := re.compile(
+        """arrow_pag' href="([^"]+)">""", re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        page_number = np[1].split('/')[-2]
+        site.add_dir(
+            'Next Page...  (Page {0})'.format(page_number),
+            np[1],
+            'List',
+            site.img_next,
+        )
     utils.eod()
 
 

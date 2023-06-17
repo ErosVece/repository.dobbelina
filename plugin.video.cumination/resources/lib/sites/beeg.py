@@ -53,7 +53,7 @@ def BGList(url, page=1):
         tag = tag if utils.PY3 else tag.encode('utf8')
         name = video["file"]["stuff"]["sf_name"] if "sf_name" in video["file"]["stuff"] else tag
         name = name if utils.PY3 else name.encode('utf8')
-        name = '{} - {}'.format(tag, name)
+        name = f'{tag} - {name}'
         story = video["file"]["stuff"]["sf_story"] if "sf_story" in video["file"]["stuff"] else ''
         story = story if utils.PY3 else story.encode('utf8')
         if "fl_duration" in video["file"]:
@@ -64,9 +64,9 @@ def BGList(url, page=1):
 
         h = video["file"]["fl_height"]
         w = video["file"]["fl_width"]
-        quality = str(h) + 'p' if "fl_height" in video["file"] else ''
-        th_size = '480x' + str((480 * h) // w)
-        plot = tag + ' - ' + name + '[CR]' + story
+        quality = f'{str(h)}p' if "fl_height" in video["file"] else ''
+        th_size = f'480x{str(480 * h // w)}'
+        plot = f'{tag} - {name}[CR]{story}'
 
         thumb = str(random.choice(fc_facts[0]["fc_thumbs"]))
         videodump = json.dumps(video)
@@ -78,7 +78,7 @@ def BGList(url, page=1):
             img = 'https://thumbs-015.externulls.com/videos/{0}/{1}.jpg?size={2}'.format(str(video["fc_file_id"]), thumb, th_size)
         parts = ''
         if len(fc_facts) > 1:
-            parts = '[COLOR blue] ({} parts)[/COLOR]'.format(len(fc_facts))
+            parts = f'[COLOR blue] ({len(fc_facts)} parts)[/COLOR]'
             for fc_fact in fc_facts:
                 if "fc_start" not in fc_fact:
                     parts = ''
@@ -91,9 +91,14 @@ def BGList(url, page=1):
 
         name += parts
 
-        cm_related = (utils.addon_sys + "?mode=" + str('beeg.ContextRelated') + "&slug=" + urllib_parse.quote_plus(slug))
+        cm_related = f"{utils.addon_sys}?mode=beeg.ContextRelated&slug={urllib_parse.quote_plus(slug)}"
         if tag:
-            cm = [('[COLOR violet]Tag [COLOR orange][{}][/COLOR]'.format(tag), 'RunPlugin(' + cm_related + ')')]
+            cm = [
+                (
+                    f'[COLOR violet]Tag [COLOR orange][{tag}][/COLOR]',
+                    f'RunPlugin({cm_related})',
+                )
+            ]
         else:
             cm = ''
 
@@ -102,29 +107,39 @@ def BGList(url, page=1):
         if not page:
             page = 1
         npage = url.split('offset=')[0] + 'offset=' + str(page * 48)
-        cm_page = (utils.addon_sys + "?mode=beeg.GotoPage" + "&url=" + urllib_parse.quote_plus(npage) + "&np=" + str(page))
+        cm_page = (
+            f"{utils.addon_sys}?mode=beeg.GotoPage&url={urllib_parse.quote_plus(npage)}"
+            + "&np="
+            + str(page)
+        )
         cm = [('[COLOR violet]Goto Page #[/COLOR]', 'RunPlugin(' + cm_page + ')')]
-        site.add_dir('Next Page ({})'.format(str(page + 1)), npage, 'BGList', site.img_next, page=page + 1, contextm=cm)
+        site.add_dir(
+            f'Next Page ({str(page + 1)})',
+            npage,
+            'BGList',
+            site.img_next,
+            page=page + 1,
+            contextm=cm,
+        )
     utils.eod()
 
 
 @site.register()
 def GotoPage(url, np):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
-        url = url.replace('offset={}'.format(int(np) * 48), 'offset={}'.format(int(pg) * 48))
-        contexturl = (utils.addon_sys + "?mode=" + "beeg.BGList&url=" + urllib_parse.quote_plus(url) + "&page=" + str(pg))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+    if pg := dialog.numeric(0, 'Enter Page number'):
+        url = url.replace(f'offset={int(np) * 48}', f'offset={int(pg) * 48}')
+        contexturl = f"{utils.addon_sys}?mode=beeg.BGList&url={urllib_parse.quote_plus(url)}&page={str(pg)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
 def ContextRelated(slug):
-    url = 'https://store.externulls.com/facts/tag?slug={}&get_original=true&limit=48&offset=0'.format(slug)
-    contexturl = (utils.addon_sys
-                  + "?mode=" + str('beeg.BGList')
-                  + "&url=" + urllib_parse.quote_plus(url))
-    xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+    url = f'https://store.externulls.com/facts/tag?slug={slug}&get_original=true&limit=48&offset=0'
+    contexturl = (
+        (utils.addon_sys + "?mode=" + 'beeg.BGList') + "&url="
+    ) + urllib_parse.quote_plus(url)
+    xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()

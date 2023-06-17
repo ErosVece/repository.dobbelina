@@ -29,11 +29,31 @@ site = AdultSite('beemtube', '[COLOR hotpink]BeemTube[/COLOR]', 'https://beemtub
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Channels[/COLOR]', site.url + 'channels/', 'Channels', site.img_cat)
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'categories/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Pornstars[/COLOR]', site.url + 'pornstars/alphabetical/', 'Pornstars', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search?q=', 'Search', site.img_search)
-    List(site.url + 'most-recent/')
+    site.add_dir(
+        '[COLOR hotpink]Channels[/COLOR]',
+        f'{site.url}channels/',
+        'Channels',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}categories/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Pornstars[/COLOR]',
+        f'{site.url}pornstars/alphabetical/',
+        'Pornstars',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search?q=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}most-recent/')
     utils.eod()
 
 
@@ -62,15 +82,14 @@ def List(url):
 @site.register()
 def GotoPage(list_mode, url, np, lp):
     dialog = xbmcgui.Dialog()
-    pg = dialog.numeric(0, 'Enter Page number')
-    if pg:
-        url = url.replace('page{}.html'.format(np), 'page{}.html'.format(pg))
-        url = url.replace('&page={}'.format(np), '&page={}'.format(pg))
+    if pg := dialog.numeric(0, 'Enter Page number'):
+        url = url.replace(f'page{np}.html', f'page{pg}.html')
+        url = url.replace(f'&page={np}', f'&page={pg}')
         if int(lp) > 0 and int(pg) > int(lp):
             utils.notify(msg='Out of range!')
             return
-        contexturl = (utils.addon_sys + "?mode=" + str(list_mode) + "&url=" + urllib_parse.quote_plus(url))
-        xbmc.executebuiltin('Container.Update(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode={str(list_mode)}&url={urllib_parse.quote_plus(url)}"
+        xbmc.executebuiltin(f'Container.Update({contexturl})')
 
 
 @site.register()
@@ -78,7 +97,7 @@ def Channels(url):
     cathtml = utils.getHtml(url)
     match = re.compile(r'class="channel_item".+?href="([^"]+)" title="([^"]+)".+?data-src="([^"]+)".+?"channel_item_videos">([^<]+)<', re.IGNORECASE | re.DOTALL).findall(cathtml)
     for caturl, name, img, count in match:
-        name = utils.cleantext(name) + '[COLOR hotpink] ({})[/COLOR]'.format(count.strip())
+        name = f'{utils.cleantext(name)}[COLOR hotpink] ({count.strip()})[/COLOR]'
         site.add_dir(name, caturl, 'List', img)
     utils.eod()
 
@@ -122,12 +141,11 @@ def Playvid(url, name, download=None):
     if match:
         embedhtml = utils.getHtml(match[0])
         match = re.compile(r'"playlist":\s+"([^"]+)"', re.IGNORECASE | re.DOTALL).findall(embedhtml)
-        if match:
-            playlist = utils.getHtml(match[0])
-            jdata = json.loads(playlist)
-            if "label" not in jdata["playlist"][0]["sources"][0].keys():
-                jdata["playlist"][0]["sources"][0]["label"] = "0p"
-            sources = {j["label"]: j["file"] for j in jdata["playlist"][0]["sources"]}
-            videourl = utils.prefquality(sources, reverse=True)
-            if videourl:
-                vp.play_from_direct_link(videourl + '|referer:' + url)
+    if match:
+        playlist = utils.getHtml(match[0])
+        jdata = json.loads(playlist)
+        if "label" not in jdata["playlist"][0]["sources"][0].keys():
+            jdata["playlist"][0]["sources"][0]["label"] = "0p"
+        sources = {j["label"]: j["file"] for j in jdata["playlist"][0]["sources"]}
+        if videourl := utils.prefquality(sources, reverse=True):
+            vp.play_from_direct_link(f'{videourl}|referer:{url}')

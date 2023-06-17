@@ -49,9 +49,10 @@ def List(url):
         videopage = videopage.replace(" ", "%20")
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration, quality=hd)
 
-    nextp = re.compile(r'<span class="text16">\d+</span> <a href="..([^"]+)"').search(listhtml)
-    if nextp:
-        nextp = nextp.group(1).replace(" ", "%20")
+    if nextp := re.compile(
+        r'<span class="text16">\d+</span> <a href="..([^"]+)"'
+    ).search(listhtml):
+        nextp = nextp[1].replace(" ", "%20")
         site.add_dir('Next Page', site.url[:-3] + nextp, 'List', site.img_next)
 
     utils.eod()
@@ -62,9 +63,10 @@ def Playvid(url, name, download=None):
     vp = utils.VideoPlayer(name, download)
     vp.progress.update(25, "[CR]Loading video page[CR]")
     videopage = utils.getHtml(url, '')
-    r = re.compile(r'<source\s*src="([^"]+)', re.DOTALL | re.IGNORECASE).search(videopage)
-    if r:
-        videourl = r.group(1)
+    if r := re.compile(
+        r'<source\s*src="([^"]+)', re.DOTALL | re.IGNORECASE
+    ).search(videopage):
+        videourl = r[1]
     else:
         servervideo = re.compile("servervideo = '([^']+)'", re.DOTALL | re.IGNORECASE).findall(videopage)[0]
         vpath = re.compile("path = '([^']+)'", re.DOTALL | re.IGNORECASE).findall(videopage)[0]
@@ -83,7 +85,7 @@ def Cat(url):
     match = re.compile(r'li>.+?href="..([^"]+)[^>]+>([^<]+).+?">([^<]+)').findall(catsec)
     for caturl, name, items in match:
         catpage = site.url[:-3] + caturl
-        name += " [COLOR deeppink]" + items + "[/COLOR]"
+        name += f" [COLOR deeppink]{items}[/COLOR]"
         site.add_dir(name, catpage, 'List', '', '')
     xbmcplugin.addSortMethod(utils.addon_handle, xbmcplugin.SORT_METHOD_TITLE)
     utils.eod()
@@ -93,7 +95,7 @@ def Cat(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '%20')
         searchUrl = searchUrl + title + '-1.html'

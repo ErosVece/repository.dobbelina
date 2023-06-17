@@ -27,12 +27,37 @@ site = AdultSite('iflix', '[COLOR hotpink]Iflix[/COLOR]', 'http://www.incestflix
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Sub-genres, Sub-fetishes, Themes[/COLOR]', site.url + 'alltags/sub', 'tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Relations[/COLOR]', site.url + 'alltags/relations', 'tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Ethnicities, Nationalities, Sects & Religious Groups[/COLOR]', site.url + 'alltags/ethn', 'tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]General, Other, Not Categorized[/COLOR]', site.url + 'alltags/general', 'tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Actresses, Performers[/COLOR]', site.url + 'alltags/actresses', 'tags', site.img_cat)
-    List(site.url + 'page/1')
+    site.add_dir(
+        '[COLOR hotpink]Sub-genres, Sub-fetishes, Themes[/COLOR]',
+        f'{site.url}alltags/sub',
+        'tags',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Relations[/COLOR]',
+        f'{site.url}alltags/relations',
+        'tags',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Ethnicities, Nationalities, Sects & Religious Groups[/COLOR]',
+        f'{site.url}alltags/ethn',
+        'tags',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]General, Other, Not Categorized[/COLOR]',
+        f'{site.url}alltags/general',
+        'tags',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Actresses, Performers[/COLOR]',
+        f'{site.url}alltags/actresses',
+        'tags',
+        site.img_cat,
+    )
+    List(f'{site.url}page/1')
     utils.eod()
 
 
@@ -45,14 +70,12 @@ def List(url):
         return
     for videopage, name, img in match:
         name = utils.cleantext(name)
-        videopage = 'http:' + videopage if videopage.startswith('//') else videopage
-        img = 'http:' + img if img.startswith('//') else img
-        contextmenu = []
-        contexturl = (utils.addon_sys
-                          + "?mode=" + str('iflix.Lookupinfo')
-                          + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu.append(('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')'))
-
+        videopage = f'http:{videopage}' if videopage.startswith('//') else videopage
+        img = f'http:{img}' if img.startswith('//') else img
+        contexturl = f"{utils.addon_sys}?mode=iflix.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = [
+            ('[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})')
+        ]
         site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu)
 
     page = int(url.split('/')[-1])
@@ -69,10 +92,11 @@ def Playvid(url, name, download=None):
     vp.progress.update(25, "[CR]Loading video page[CR]")
     video_page = utils.getHtml(url, site.url)
 
-    source = re.compile("""<source.*?src=(?:"|')([^"']+)[^>]+>""", re.DOTALL | re.IGNORECASE).search(video_page)
-    if source:
-        videourl = source.group(1)
-        videourl = 'http:' + videourl if videourl.startswith('//') else videourl
+    if source := re.compile(
+        """<source.*?src=(?:"|')([^"']+)[^>]+>""", re.DOTALL | re.IGNORECASE
+    ).search(video_page):
+        videourl = source[1]
+        videourl = f'http:{videourl}' if videourl.startswith('//') else videourl
         vp.play_from_direct_link(videourl)
     else:
         vp.progress.close()
@@ -85,7 +109,7 @@ def tags(url):
     what = url.split('/')[-1]
     url = '/'.join(url.split('/')[:-1])
     listhtml = utils.getHtml(url)
-    
+
     if what == 'sub':
         listhtml = re.compile("Themes</h1>(.*?)<h1>", re.DOTALL | re.IGNORECASE).findall(listhtml)[0]
     elif what == 'relations':
@@ -96,23 +120,27 @@ def tags(url):
         listhtml = re.compile("Not Categorized</h1>(.*?)<h1>", re.DOTALL | re.IGNORECASE).findall(listhtml)[0]
     elif what == 'actresses':
         listhtml = re.compile("Performers</h1>(.*?)</div>", re.DOTALL | re.IGNORECASE).findall(listhtml)[0]
-    
-    
+
+
     match = re.compile("href='([^']+)'><span id='studiolink[^>]+>(.*?)</span", re.DOTALL | re.IGNORECASE).findall(listhtml)
     for tagpage, name in match:
         name = utils.cleantext(name.strip()).replace('<b>', '[COLOR red][B]').replace('</b>', '[/B][/COLOR]')
-        tagpage = 'http:' + tagpage if tagpage.startswith('//') else tagpage
-        site.add_dir(name, tagpage + '/page/1', 'List', '')
+        tagpage = f'http:{tagpage}' if tagpage.startswith('//') else tagpage
+        site.add_dir(name, f'{tagpage}/page/1', 'List', '')
 
     utils.eod()
 
 
 @site.register()
 def Lookupinfo(url):
+
+
+
     class SiteLookup(utils.LookupInfo):
         def url_constructor(self, url):
-            url = 'http:' + url if url.startswith('//') else url
-            return url + '/page/1'
+            url = f'http:{url}' if url.startswith('//') else url
+            return f'{url}/page/1'
+
 
     lookup_list = [
         ("Tag", r"<a class='studiolink\d+' href='([^']+)'>([^<]+)</a>", '')

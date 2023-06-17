@@ -27,7 +27,7 @@ site = AdultSite('camsoda', '[COLOR hotpink]Camsoda[/COLOR]', 'https://www.camso
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR red]Refresh Camsoda images[/COLOR]', '', 'clean_database', '', Folder=False)
-    List(site.url + '/api/v1/browse/online')
+    List(f'{site.url}/api/v1/browse/online')
     utils.eod()
 
 
@@ -44,13 +44,17 @@ def List(url):
                 name = camgirl.get('2')
                 name = name if utils.PY3 else name.encode('utf8')
                 subject = camgirl.get('6')
-                subject += u'[CR][CR][COLOR deeppink] Viewers: [/COLOR]{}[CR]'.format(camgirl.get('4'))
+                subject += f"[CR][CR][COLOR deeppink] Viewers: [/COLOR]{camgirl.get('4')}[CR]"
                 if camgirl.get('3'):
-                    subject += u'[COLOR deeppink] Status: [/COLOR]{}[CR]'.format(camgirl.get('3'))
+                    subject += f"[COLOR deeppink] Status: [/COLOR]{camgirl.get('3')}[CR]"
                 subject = subject if utils.PY3 else subject.encode('utf8')
                 id = camgirl.get('1')
                 img = camgirl.get('10')
-                img = 'http:' + img if img.startswith('//)') else img.replace('https:', 'http:')
+                img = (
+                    f'http:{img}'
+                    if img.startswith('//)')
+                    else img.replace('https:', 'http:')
+                )
                 fanart = 'http:' + camgirl.get('15') if camgirl.get('15') else None
             elif type(camgirl) is list:
                 name = camgirl[2]
@@ -58,13 +62,13 @@ def List(url):
                 subject = camgirl[6]
                 subject = subject if utils.PY3 else subject.encode('utf8')
                 id = camgirl[1]
-                img = 'http:' + camgirl[10]
+                img = f'http:{camgirl[10]}'
                 fanart = None
         else:
             name = camgirl['display_name'] if utils.PY3 else camgirl['display_name'].encode('utf8')
             subject = camgirl['subject_html'] if utils.PY3 else camgirl['subject_html'].encode('utf8')
             id = camgirl['username']
-            img = 'https://md.camsoda.com/thumbs/%s.jpg?cb=%s' % (id, int(time.time()))
+            img = f'https://md.camsoda.com/thumbs/{id}.jpg?cb={int(time.time())}'
         videourl = '{0}/api/v1/video/vtoken/{1}'.format(site.url, id)
         site.add_download_link(name, videourl, 'Playvid', img, subject, noDownload=True, fanart=fanart)
     utils.eod()
@@ -77,9 +81,9 @@ def clean_database(showdialog=True):
         with conn:
             lst = conn.execute("SELECT id, cachedurl FROM texture WHERE url LIKE '%%%s%%';" % ".camsoda.com")
             for row in lst:
-                conn.execute("DELETE FROM sizes WHERE idtexture LIKE '%s';" % row[0])
+                conn.execute(f"DELETE FROM sizes WHERE idtexture LIKE '{row[0]}';")
                 try:
-                    os.remove(utils.TRANSLATEPATH("special://thumbnails/" + row[1]))
+                    os.remove(utils.TRANSLATEPATH(f"special://thumbnails/{row[1]}"))
                 except:
                     pass
             conn.execute("DELETE FROM texture WHERE url LIKE '%%%s%%';" % ".camsoda.com")
@@ -91,7 +95,7 @@ def clean_database(showdialog=True):
 
 @site.register()
 def Playvid(url, name):
-    url = url + "?username=guest_" + str(random.randrange(100, 55555))
+    url = f"{url}?username=guest_{random.randrange(100, 55555)}"
     response = utils._getHtml(url)
     data = json.loads(response)
     if "camhouse" in data['stream_name']:
@@ -102,12 +106,11 @@ def Playvid(url, name):
         else:
             videourl = ""
             utils.notify('Finished', 'Model gone Offline')
+    elif len(data['edge_servers']) > 0:
+        videourl = "https://" + random.choice(data['edge_servers']) + "/" + data['stream_name'] + "_v1/index.m3u8?token=" + data['token']
     else:
-        if len(data['edge_servers']) > 0:
-            videourl = "https://" + random.choice(data['edge_servers']) + "/" + data['stream_name'] + "_v1/index.m3u8?token=" + data['token']
-        else:
-            videourl = ""
-            utils.notify('Finished', 'Model gone Offline or Private')
+        videourl = ""
+        utils.notify('Finished', 'Model gone Offline or Private')
     if videourl:
         videourl += '|User-Agent=iPad&verifypeer=false'
         vp = utils.VideoPlayer(name)

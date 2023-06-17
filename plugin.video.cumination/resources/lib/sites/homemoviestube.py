@@ -26,9 +26,19 @@ site = AdultSite('homemoviestube', '[COLOR hotpink]HomeMovies Tube[/COLOR]', 'ht
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Categories[/COLOR]', site.url + 'channels/', 'Categories', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/', 'Search', site.img_search)
-    List(site.url + 'most-recent/')
+    site.add_dir(
+        '[COLOR hotpink]Categories[/COLOR]',
+        f'{site.url}channels/',
+        'Categories',
+        site.img_cat,
+    )
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}most-recent/')
     utils.eod()
 
 
@@ -40,14 +50,15 @@ def List(url):
     for img, duration, videopage, name in match:
         name = utils.cleantext(name)
         if videopage.startswith('//'):
-            videopage = 'https:' + videopage
+            videopage = f'https:{videopage}'
         if img.startswith('//'):
-            img = 'https:' + img
+            img = f'https:{img}'
         site.add_download_link(name, videopage, 'Playvid', img, name, duration=duration)
 
-    nextp = re.compile(r"class='next'><a\s*href='([^']+)'>Next", re.DOTALL | re.IGNORECASE).search(html)
-    if nextp:
-        np = urllib_parse.urljoin(url, nextp.group(1))
+    if nextp := re.compile(
+        r"class='next'><a\s*href='([^']+)'>Next", re.DOTALL | re.IGNORECASE
+    ).search(html):
+        np = urllib_parse.urljoin(url, nextp[1])
         curr_pg = re.findall(r"class='current'>([^<]+)", html)[0]
         last_pg = re.findall(r"class='pagination.+?href.+?>([^<]+)", html)[0]
         site.add_dir('[COLOR hotpink]Next Page[/COLOR] (Currently in Page {0} of {1})'.format(curr_pg, last_pg), np, 'List', site.img_next)
@@ -63,9 +74,9 @@ def Categories(url):
     for img, caturl, name in match:
         name = utils.cleantext(name)
         if caturl.startswith('//'):
-            caturl = 'https:' + caturl
+            caturl = f'https:{caturl}'
         if img.startswith('//'):
-            img = 'https:' + img
+            img = f'https:{img}'
         site.add_dir(name, caturl, 'List', img)
     utils.eod()
 
@@ -85,9 +96,10 @@ def Playvid(url, name, download=None):
     vp.progress.update(25, "[CR]Loading video page[CR]")
     video_page = utils.getHtml(url, site.url)
 
-    source = re.compile(r'<source.+?src="([^"]+)', re.DOTALL | re.IGNORECASE).search(video_page)
-    if source:
-        vp.play_from_direct_link(source.group(1))
+    if source := re.compile(
+        r'<source.+?src="([^"]+)', re.DOTALL | re.IGNORECASE
+    ).search(video_page):
+        vp.play_from_direct_link(source[1])
     else:
         vp.progress.close()
         utils.notify('Oh Oh', 'No Videos found')

@@ -29,8 +29,13 @@ site = AdultSite("hentaistream", "[COLOR hotpink]HentaiStream[/COLOR]", 'https:/
 @site.register(default_mode=True)
 def Main():
     site.add_dir('[COLOR hotpink]Tags[/COLOR]', site.url, 'Tags', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'search/?s=', 'Search', site.img_search)
-    List(site.url + 'hentai/search?order=latest&page=1', False)
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}search/?s=',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}hentai/search?order=latest&page=1', False)
 
 
 @site.register()
@@ -42,20 +47,16 @@ def List(url, episodes=True):
         hd = " [COLOR orange]{0}[/COLOR]".format(hd.upper())
         videopage = site.url + videopage
         img = site.url + img
-        contexturl = (utils.addon_sys
-                      + "?mode=" + str('hentaistream.Lookupinfo')
-                      + "&url=" + urllib_parse.quote_plus(videopage))
-        contextmenu = ('[COLOR deeppink]Lookup info[/COLOR]', 'RunPlugin(' + contexturl + ')')
+        contexturl = f"{utils.addon_sys}?mode=hentaistream.Lookupinfo&url={urllib_parse.quote_plus(videopage)}"
+        contextmenu = '[COLOR deeppink]Lookup info[/COLOR]', f'RunPlugin({contexturl})'
         if episodes:
             name = name + hd
             site.add_dir(name, videopage, 'Episodes', img)
         else:
             site.add_download_link(name, videopage, 'Playvid', img, name, contextm=contextmenu, quality=hd)
     nextregex = 'rel="next"' if episodes else 'nextPage'
-    np = re.compile(nextregex, re.DOTALL | re.IGNORECASE).search(listhtml)
-    if np:
-        pagelookup = re.search(r"page=(\d+)", url).group(1)
-        if pagelookup:
+    if np := re.compile(nextregex, re.DOTALL | re.IGNORECASE).search(listhtml):
+        if pagelookup := re.search(r"page=(\d+)", url)[1]:
             np = int(pagelookup) + 1
             url = url.replace("page={0}".format(pagelookup), "page={0}".format(np))
             site.add_dir('Next Page ({0})'.format(np), url, 'List', site.img_next)
@@ -78,9 +79,10 @@ def Episodes(url):
     listhtml = utils.getHtml(url)
 
     img = ''
-    imgmatch = re.search('<img src="/([^"]+)" class', listhtml, re.IGNORECASE | re.DOTALL)
-    if imgmatch:
-        img = site.url + imgmatch.group(1)
+    if imgmatch := re.search(
+        '<img src="/([^"]+)" class', listhtml, re.IGNORECASE | re.DOTALL
+    ):
+        img = site.url + imgmatch[1]
 
     match = re.compile(r'data-index="\d+">\s+?<a href="/([^"]+)".*?title">([^<]+)<', re.DOTALL | re.IGNORECASE).findall(listhtml)
     for seriepage, name in match:
@@ -112,12 +114,13 @@ def Playvid(url, name, download=None):
     videos = re.compile("src: '([^']+(?:mpd|mp4|webm))'", re.DOTALL | re.IGNORECASE).findall(vpage)
 
     for video in videos:
-        quali = re.search(r"(\d+)(?:(?:/manifest\.mpd)|(?:p\.mp4)|(?:p\.webm))", video)
-        if quali:
-            sources.update({quali.group(1): video})
+        if quali := re.search(
+            r"(\d+)(?:(?:/manifest\.mpd)|(?:p\.mp4)|(?:p\.webm))", video
+        ):
+            sources[quali[1]] = video
         else:
-            sources.update({'00': video})
-            
+            sources['00'] = video
+
     videourl = utils.selector('Select quality', sources, setting_valid='qualityask', sort_by=lambda x: int(x), reverse=True)
     if not videourl:
         vp.progress.close()
@@ -129,7 +132,7 @@ def Playvid(url, name, download=None):
     sub = re.search("subUrl: '([^']+)'", vpage, re.IGNORECASE | re.DOTALL)
     if videourl:
         if sub:
-            subtitle = sub.group(1)
+            subtitle = sub[1]
             subtitle = subtitle + '|User-Agent={0}&Referer={1}&Origin={2}'.format(utils.USER_AGENT, site.url, site.url[:-1])
             utils.playvid(videourl, name, subtitle=subtitle)
         else:

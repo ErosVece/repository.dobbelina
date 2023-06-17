@@ -25,11 +25,18 @@ site = AdultSite("anybunny", "[COLOR hotpink]Anybunny[/COLOR]", "http://anybunny
 
 @site.register(default_mode=True)
 def Main():
-    site.add_dir('[COLOR hotpink]Top videos[/COLOR]', site.url + 'top/', 'List', '', '')
+    site.add_dir(
+        '[COLOR hotpink]Top videos[/COLOR]', f'{site.url}top/', 'List', '', ''
+    )
     site.add_dir('[COLOR hotpink]Categories - images[/COLOR]', site.url, 'Categories', site.img_cat)
     site.add_dir('[COLOR hotpink]Categories - all[/COLOR]', site.url, 'Categories2', site.img_cat)
-    site.add_dir('[COLOR hotpink]Search[/COLOR]', site.url + 'new/', 'Search', site.img_search)
-    List(site.url + 'new/?p=1')
+    site.add_dir(
+        '[COLOR hotpink]Search[/COLOR]',
+        f'{site.url}new/',
+        'Search',
+        site.img_search,
+    )
+    List(f'{site.url}new/?p=1')
     utils.eod()
 
 
@@ -41,9 +48,10 @@ def List(url):
         name = utils.cleantext(name)
         site.add_download_link(name, videopage, 'Playvid', img, '')
 
-    nextp = re.compile('href="([^"]+)">Next', re.DOTALL | re.IGNORECASE).search(listhtml)
-    if nextp:
-        site.add_dir('Next Page', nextp.group(1), 'List', site.img_next)
+    if nextp := re.compile(
+        'href="([^"]+)">Next', re.DOTALL | re.IGNORECASE
+    ).search(listhtml):
+        site.add_dir('Next Page', nextp[1], 'List', site.img_next)
 
     utils.eod()
 
@@ -60,7 +68,7 @@ def Categories(url):
     match = re.compile("<a href='/top/([^']+)'>.*?src='([^']+)' alt='([^']+)'", re.DOTALL | re.IGNORECASE).findall(cathtml)
     match = sorted(match, key=lambda x: x[2])
     for catid, img, name in match:
-        catpage = site.url + 'new/' + catid
+        catpage = f'{site.url}new/{catid}'
         site.add_dir(name, catpage, 'List', img)
     utils.eod()
 
@@ -70,8 +78,8 @@ def Categories2(url):
     cathtml = utils.getHtml(url, '')
     match = re.compile(r"href='/top/([^']+)'>([^<]+)</a> <a>([^)]+\))", re.DOTALL | re.IGNORECASE).findall(cathtml)
     for catid, name, videos in match:
-        name = name + " [COLOR deeppink]" + videos + "[/COLOR]"
-        catpage = site.url + 'new/' + catid
+        name = f"{name} [COLOR deeppink]{videos}[/COLOR]"
+        catpage = f'{site.url}new/{catid}'
         site.add_dir(name, catpage, 'List', '')
     utils.eod()
 
@@ -80,7 +88,7 @@ def Categories2(url):
 def Search(url, keyword=None):
     searchUrl = url
     if not keyword:
-        site.search_dir(url, 'Search')
+        site.search_dir(searchUrl, 'Search')
     else:
         title = keyword.replace(' ', '_')
         searchUrl = searchUrl + title

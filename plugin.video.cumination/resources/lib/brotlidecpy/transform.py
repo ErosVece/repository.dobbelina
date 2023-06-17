@@ -22,15 +22,10 @@ class Transform:
         t = kTransforms[transform].transform
         skip = t < (0 if kOmitFirst1 else (t - (kOmitFirst1 - 1)))
         start_idx = idx
-        if skip > length:
-            skip = length
-
-        prefix_pos = 0
-        while prefix_pos < len(prefix):
+        skip = min(skip, length)
+        for prefix_pos in range(len(prefix)):
             dst[idx] = prefix[prefix_pos]
             idx += 1
-            prefix_pos += 1
-
         word += skip
         length -= skip
 
@@ -51,12 +46,9 @@ class Transform:
                 uppercase += step
                 length -= step
 
-        suffix_pos = 0
-        while suffix_pos < len(suffix):
+        for suffix_pos in range(len(suffix)):
             dst[idx] = suffix[suffix_pos]
             idx += 1
-            suffix_pos += 1
-
         return idx - start_idx
 
 
